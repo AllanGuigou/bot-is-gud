@@ -14,13 +14,12 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("com.gitlab.kordlib.kord:kord-core:0.5.11")
     implementation("org.slf4j:slf4j-simple:1.7.30")
+    implementation("com.gitlab.kordlib.kord:kord-core:0.5.11")
 
     testImplementation("junit:junit")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
-
 }
 
 tasks {
