@@ -1,21 +1,25 @@
 package com.guigou.botisgud.services
 
 import com.gitlab.kordlib.common.entity.Snowflake
-import com.guigou.botisgud.models.Reminder
+import com.guigou.botisgud.models.*
+import io.ktor.http.Url
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import java.time.temporal.ChronoUnit
 import java.util.*
 import kotlin.test.assertNotNull
 
 class ReminderServiceImplTests {
 
     @Test
-    fun `test`() = runBlocking {
+    fun `get returns reminders`() = runBlocking {
         // https://medium.com/@heyitsmohit/unit-testing-delays-errors-retries-with-kotlin-flows-77ce00d0c2f3
+        val reminder = ReminderDto(Snowflake("1"), "foo", Url("https://example.com"))
+        val trigger = RelativeReminderTrigger(1, ChronoUnit.MILLIS)
         val sut = ReminderServiceImpl()
-        sut.add(Reminder(Snowflake("foo"), "bar", "baz", Date()))
+        sut.add(reminder, trigger)
 
         val flow = sut.get()
 

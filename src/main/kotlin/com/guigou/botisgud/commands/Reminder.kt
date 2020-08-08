@@ -37,7 +37,7 @@ class Reminder : Command {
                         description = value.message
                         fields.add(EmbedBuilder.Field().apply {
                             this.name = "Original Message"
-                            this.value = value.link
+                            this.value = value.link.toString()
                         })
                     }
                     reminderService.remove(value)

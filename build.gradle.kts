@@ -20,6 +20,8 @@ dependencies {
     testImplementation("junit:junit")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+    testImplementation("io.mockk:mockk:1.10.0")
+    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.22")
 }
 
 tasks {

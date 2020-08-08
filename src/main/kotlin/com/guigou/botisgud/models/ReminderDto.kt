@@ -1,6 +1,6 @@
 package com.guigou.botisgud.models
 
 import com.gitlab.kordlib.common.entity.Snowflake
+import io.ktor.http.Url
 
-// TODO: make link a uri
-data class ReminderDto(val userId: Snowflake, val message: String, val link: String)
+data class ReminderDto(val userId: Snowflake, val message: String, val link: Url)
