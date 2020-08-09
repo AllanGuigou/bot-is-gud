@@ -21,7 +21,6 @@ class Reminder : Command {
     private var reminderService: ReminderService = ReminderServiceImpl()
 
     override fun register(client: Kord) {
-
         client.on<ReactionAddEvent> {
             val trigger = RelativeReminderTrigger(1, ChronoUnit.MINUTES)
             val reminderDto = ReminderDto(userId, message.asMessage().content, link)
