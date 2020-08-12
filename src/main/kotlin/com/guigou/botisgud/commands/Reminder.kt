@@ -22,10 +22,12 @@ class Reminder(private val service: ReminderService = ReminderServiceImpl()) : C
     private val reactions: Map<String, ReminderTrigger> = mapOf(Pair("⌚", RelativeReminderTrigger(1, ChronoUnit.HOURS)))
 
     override fun register(client: Kord) {
+        /* TODO: determine how to test kord event handlers
+         * Kord.on is an inline function which appears to not be mock-able
+         * Current work around is to test onReactionAddEvent
+         */
         client.on<ReactionAddEvent> {
-            val trigger = RelativeReminderTrigger(1, ChronoUnit.MINUTES)
-            val reminderDto = ReminderDto(userId, message.asMessage().content, link)
-            reminderService.add(reminderDto, trigger)
+            onReactionAddEvent(this)
         }
 
         val context = newSingleThreadContext("reminderServiceCollector")
@@ -40,9 +42,22 @@ class Reminder(private val service: ReminderService = ReminderServiceImpl()) : C
                             this.value = value.link.toString()
                         })
                     }
-                    reminderService.remove(value)
+                    service.remove(value)
                 }
             }
         }
+    }
+
+    suspend fun onReactionAddEvent(event: ReactionAddEvent) {
+
+        println(event)
+        if (!reactions.containsKey(event.emoji.name)) {
+            return
+        }
+        println(event.userId.value)
+
+        val trigger = reactions[event.emoji.name]
+        val reminderDto = ReminderDto(event.userId, event.message.asMessage().content, event.link)
+        service.add(reminderDto, trigger!!) // TODO: can !! be avoided?
     }
 }
