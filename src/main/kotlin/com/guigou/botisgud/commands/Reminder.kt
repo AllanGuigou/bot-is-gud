@@ -8,6 +8,7 @@ import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 import com.guigou.botisgud.extensions.kord.link
 import com.guigou.botisgud.models.RelativeReminderTrigger
 import com.guigou.botisgud.models.ReminderDto
+import com.guigou.botisgud.models.ReminderTrigger
 import com.guigou.botisgud.services.ReminderService
 import com.guigou.botisgud.services.ReminderServiceImpl
 import kotlinx.coroutines.GlobalScope
@@ -17,19 +18,23 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import java.time.temporal.ChronoUnit
 
-class Reminder : Command {
-    private var reminderService: ReminderService = ReminderServiceImpl()
+class Reminder(private val service: ReminderService = ReminderServiceImpl()) : Command {
+    private val reactions: Map<String, ReminderTrigger> = mapOf(Pair("⌚", RelativeReminderTrigger(1, ChronoUnit.HOURS)))
 
     override fun register(client: Kord) {
         client.on<ReactionAddEvent> {
-            val trigger = RelativeReminderTrigger(1, ChronoUnit.MINUTES)
+            if (!reactions.containsKey(emoji.name)) {
+                return@on
+            }
+
+            val trigger = reactions[emoji.name]
             val reminderDto = ReminderDto(userId, message.asMessage().content, link)
-            reminderService.add(reminderDto, trigger)
+            service.add(reminderDto, trigger!!)
         }
 
         val context = newSingleThreadContext("reminderServiceCollector")
         GlobalScope.launch(context) {
-            reminderService.get().collect { value ->
+            service.get().collect { value ->
                 coroutineScope {
                     client.getUser(value.userId)!!.getDmChannel().createEmbed {
                         title = "Reminder"
@@ -39,7 +44,7 @@ class Reminder : Command {
                             this.value = value.link.toString()
                         })
                     }
-                    reminderService.remove(value)
+                    service.remove(value)
                 }
             }
         }
