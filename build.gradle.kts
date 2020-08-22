@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4.0"
 }
 
 group = "org.example"
@@ -15,7 +15,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.slf4j:slf4j-simple:1.7.30")
-    implementation("com.gitlab.kordlib.kord:kord-core:0.5.11")
+    implementation("com.gitlab.kordlib.kord:kord-core:0.6.1")
 
     testImplementation("junit:junit")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
