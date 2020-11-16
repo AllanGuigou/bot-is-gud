@@ -6,6 +6,7 @@ import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.core.on
 import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 import com.guigou.botisgud.extensions.kord.link
+import com.guigou.botisgud.models.AbsoluteReminderTrigger
 import com.guigou.botisgud.models.RelativeReminderTrigger
 import com.guigou.botisgud.models.ReminderDto
 import com.guigou.botisgud.models.ReminderTrigger
@@ -19,7 +20,11 @@ import kotlinx.coroutines.newSingleThreadContext
 import java.time.temporal.ChronoUnit
 
 class Reminder(private val service: ReminderService = ReminderServiceImpl()) : Command {
-    private val reactions: Map<String, ReminderTrigger> = mapOf(Pair("⌚", RelativeReminderTrigger(1, ChronoUnit.HOURS)))
+    private val reactions: Map<String, ReminderTrigger> = mapOf(
+            Pair("⌚", RelativeReminderTrigger(1, ChronoUnit.HOURS)),
+            Pair("☀️", AbsoluteReminderTrigger()),
+            Pair("🌑", AbsoluteReminderTrigger())
+    )
 
     override fun register(client: Kord) {
         client.on<ReactionAddEvent> {

@@ -6,10 +6,9 @@ import io.ktor.http.Url
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Test
 import java.time.temporal.ChronoUnit
-import java.util.*
-import kotlin.test.assertNotNull
 
 class ReminderServiceImplTests {
 
