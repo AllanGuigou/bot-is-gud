@@ -29,5 +29,4 @@ class ReminderServiceImpl : ReminderService {
             delay(1000)
         }
     }
-
 }

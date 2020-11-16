@@ -21,9 +21,9 @@ import java.time.temporal.ChronoUnit
 
 class Reminder(private val service: ReminderService = ReminderServiceImpl()) : Command {
     private val reactions: Map<String, ReminderTrigger> = mapOf(
-            Pair("⌚", RelativeReminderTrigger(1, ChronoUnit.HOURS)),
-            Pair("☀️", AbsoluteReminderTrigger()),
-            Pair("🌑", AbsoluteReminderTrigger())
+        Pair("⌚", RelativeReminderTrigger(1, ChronoUnit.HOURS)),
+        Pair("☀️", AbsoluteReminderTrigger()),
+        Pair("🌑", AbsoluteReminderTrigger())
     )
 
     override fun register(client: Kord) {
@@ -44,10 +44,12 @@ class Reminder(private val service: ReminderService = ReminderServiceImpl()) : C
                     client.getUser(value.userId)!!.getDmChannel().createEmbed {
                         title = "Reminder"
                         description = value.message
-                        fields.add(EmbedBuilder.Field().apply {
-                            this.name = "Original Message"
-                            this.value = value.link.toString()
-                        })
+                        fields.add(
+                            EmbedBuilder.Field().apply {
+                                this.name = "Original Message"
+                                this.value = value.link.toString()
+                            }
+                        )
                     }
                     service.remove(value)
                 }
