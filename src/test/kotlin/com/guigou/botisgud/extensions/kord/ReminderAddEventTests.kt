@@ -6,9 +6,9 @@ import com.gitlab.kordlib.core.entity.ReactionEmoji
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.core.supplier.EntitySupplier
 import io.mockk.mockk
-import org.junit.Test
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import org.junit.jupiter.api.Test
 
 class ReminderAddEventTests {
 
