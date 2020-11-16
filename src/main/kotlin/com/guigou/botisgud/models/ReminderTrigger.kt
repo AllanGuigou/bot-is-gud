@@ -1,18 +1,14 @@
 package com.guigou.botisgud.models
 
-import com.cronutils.builder.CronBuilder
 import com.cronutils.model.CronType
-import com.cronutils.model.definition.CronDefinition
 import com.cronutils.model.definition.CronDefinitionBuilder
-import com.cronutils.model.field.expression.FieldExpressionFactory.on
 import com.cronutils.model.time.ExecutionTime
 import com.cronutils.parser.CronParser
+import com.guigou.botisgud.extensions.java.util.unwrap
 import java.time.Clock
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.temporal.TemporalUnit
-import java.util.*
-import kotlin.reflect.typeOf
 
 interface ReminderTrigger {
     fun timestamp(): Instant
@@ -39,5 +35,3 @@ class AbsoluteReminderTrigger(private val clock: Clock = Clock.systemUTC()) : Re
         return result.unwrap()!!.toInstant()
     }
 }
-
-fun <T> Optional<T>.unwrap(): T? = orElse(null)

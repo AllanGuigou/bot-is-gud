@@ -12,7 +12,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
-class RelativeReminderTriggerTests {
+class ReminderTriggerTests {
 
     @Nested
     inner class `RelativeReminderTrigger` {
