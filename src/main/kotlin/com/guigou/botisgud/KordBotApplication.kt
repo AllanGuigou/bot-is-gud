@@ -6,7 +6,8 @@ import com.guigou.botisgud.commands.Typing
 import com.guigou.botisgud.commands.register
 
 suspend fun main() {
-    val client = Kord(System.getenv("DISCORD_TOKEN"))
+    val token = System.getenv("DISCORD_TOKEN")
+    val client = Kord(token)
 
     client.register(Typing()) // TODO: determine how to initialize class within extension function
     client.register(Reminder())
