@@ -44,9 +44,11 @@ class Nicknamer(private val wordService: WordService = WordServiceImpl()) : Comm
                     for (userSnowflake in entry.value) {
                         val member = client.getUser(userSnowflake)!!.asMember(entry.key)
 
-                        member.edit {
-                            nickname = wordService.random()
-                        }
+                        try {
+                            member.edit {
+                                nickname = wordService.random()
+                            }
+                        } catch(ex: Exception) { }
                     }
                 }
                 time = now().plusMillis(period)
