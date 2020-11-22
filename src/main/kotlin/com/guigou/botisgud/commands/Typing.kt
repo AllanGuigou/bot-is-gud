@@ -3,13 +3,14 @@ package com.guigou.botisgud.commands
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.event.channel.TypingStartEvent
 import com.gitlab.kordlib.core.on
+import kotlinx.coroutines.CoroutineScope
 import java.time.Instant
 import kotlin.random.Random
 
 class Typing : Command {
     private var triggered: Instant = Instant.MIN;
 
-    override fun register(client: Kord) {
+    override suspend fun register(client: Kord, scope: CoroutineScope) {
         client.on<TypingStartEvent> {
             if (user.asUser().isBot == true) {
                 return@on

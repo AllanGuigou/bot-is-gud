@@ -12,11 +12,8 @@ import com.guigou.botisgud.models.ReminderDto
 import com.guigou.botisgud.models.ReminderTrigger
 import com.guigou.botisgud.services.ReminderService
 import com.guigou.botisgud.services.ReminderServiceImpl
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.newSingleThreadContext
 import java.time.temporal.ChronoUnit
 
 class Reminder(private val service: ReminderService = ReminderServiceImpl()) : Command {
@@ -26,7 +23,7 @@ class Reminder(private val service: ReminderService = ReminderServiceImpl()) : C
         Pair("🌑", AbsoluteReminderTrigger())
     )
 
-    override fun register(client: Kord) {
+    override suspend fun register(client: Kord, scope: CoroutineScope) {
         client.on<ReactionAddEvent> {
             if (!reactions.containsKey(emoji.name)) {
                 return@on
@@ -37,22 +34,23 @@ class Reminder(private val service: ReminderService = ReminderServiceImpl()) : C
             service.add(reminderDto, trigger!!)
         }
 
-        val context = newSingleThreadContext("reminderServiceCollector")
-        GlobalScope.launch(context) {
+        backgroundWork(client, scope)
+    }
+
+    private fun backgroundWork(client: Kord, scope: CoroutineScope) {
+        scope.launch(Dispatchers.Default) {
             service.get().collect { value ->
-                coroutineScope {
-                    client.getUser(value.userId)!!.getDmChannel().createEmbed {
-                        title = "Reminder"
-                        description = value.message
-                        fields.add(
-                            EmbedBuilder.Field().apply {
-                                this.name = "Original Message"
-                                this.value = value.link.toString()
-                            }
-                        )
-                    }
-                    service.remove(value)
+                client.getUser(value.userId)!!.getDmChannel().createEmbed {
+                    title = "Reminder"
+                    description = value.message
+                    fields.add(
+                        EmbedBuilder.Field().apply {
+                            this.name = "Original Message"
+                            this.value = value.link.toString()
+                        }
+                    )
                 }
+                service.remove(value)
             }
         }
     }

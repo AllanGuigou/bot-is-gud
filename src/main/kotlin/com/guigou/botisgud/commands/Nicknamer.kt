@@ -7,17 +7,14 @@ import com.gitlab.kordlib.core.event.message.MessageCreateEvent
 import com.gitlab.kordlib.core.on
 import com.guigou.botisgud.services.WordService
 import com.guigou.botisgud.services.WordServiceImpl
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import java.time.Instant
-import java.util.*
-import kotlin.concurrent.schedule
+import kotlinx.coroutines.*
+import java.time.Instant.now
 
 class Nicknamer(private val wordService: WordService = WordServiceImpl()) : Command {
 
     private val users: MutableMap<Snowflake, MutableSet<Snowflake>> = mutableMapOf()
 
-    override fun register(client: Kord) {
+    override suspend fun register(client: Kord, scope: CoroutineScope) {
         client.on<MessageCreateEvent> {
             if (message.content != "!nicknamer") {
                 return@on
@@ -33,11 +30,16 @@ class Nicknamer(private val wordService: WordService = WordServiceImpl()) : Comm
             }
         }
 
-        // TODO: would this be a daemon?
-        val time = Date.from(Instant.now().plusSeconds(60))!!
+        backgroundWork(client, scope)
+    }
+
+    private fun backgroundWork(client: Kord, scope: CoroutineScope) {
+        var time = now().plusSeconds(60)!!
         val period = 5 * 60 * 1000L
-        Timer("nicknamer").schedule(time, period) {
-            GlobalScope.launch {
+
+        scope.launch(Dispatchers.Default) {
+            while (true) {
+                delay(time.toEpochMilli() - now().toEpochMilli())
                 for (entry in users) {
                     for (userSnowflake in entry.value) {
                         val member = client.getUser(userSnowflake)!!.asMember(entry.key)
@@ -47,7 +49,9 @@ class Nicknamer(private val wordService: WordService = WordServiceImpl()) : Comm
                         }
                     }
                 }
+                time = now().plusMillis(period)
             }
         }
     }
+
 }
