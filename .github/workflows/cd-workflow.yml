@@ -29,5 +29,5 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: docker.pkg.github.com
-          repository: bot-is-gud/bot-is-gud
+          repository: allanguigou/bot-is-gud/bot-is-gud
           tag_with_ref: true
