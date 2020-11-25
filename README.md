@@ -13,9 +13,9 @@ docker build -t bot-is-gud .
 ## Run
 
 ```bash
-DISCORD_TOKEN={TOKEN} java -jar build/libs/*.jar 
+NICKNAME_USERS="$(cat users)" DISCORD_TOKEN={TOKEN} java -jar build/libs/*.jar 
 ```
 
 ```bash
-docker run --env DISCORD_TOKEN={TOKEN} bot-is-gud
+docker run --env-file .env bot-is-gud
 ```
