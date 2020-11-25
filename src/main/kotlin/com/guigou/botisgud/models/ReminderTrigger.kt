@@ -25,12 +25,11 @@ class RelativeReminderTrigger(
     }
 }
 
-class AbsoluteReminderTrigger(private val clock: Clock = Clock.systemUTC()) : ReminderTrigger {
-    @ExperimentalStdlibApi
+class AbsoluteReminderTrigger(private val expression: String, private val clock: Clock = Clock.systemUTC()) : ReminderTrigger {
     override fun timestamp(): Instant {
         val now = ZonedDateTime.now(clock)
         val parser = CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX))
-        val result = ExecutionTime.forCron(parser.parse("* 17 * * *")).nextExecution(now)
+        val result = ExecutionTime.forCron(parser.parse(expression)).nextExecution(now)
 
         return result.unwrap()!!.toInstant()
     }

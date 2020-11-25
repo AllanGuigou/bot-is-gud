@@ -53,7 +53,7 @@ class ReminderTriggerTests {
                 DynamicTest.dynamicTest("when it is $input") {
                     val clock = Clock.fixed(Instant.parse(input), ZoneId.of("UTC"))
 
-                    val sut = AbsoluteReminderTrigger(clock)
+                    val sut = AbsoluteReminderTrigger("* 17 * * *", clock)
 
                     val result = sut.timestamp()
 
