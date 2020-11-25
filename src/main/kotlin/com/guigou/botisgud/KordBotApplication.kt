@@ -23,7 +23,10 @@ fun main() = runBlocking {
         }
         .groupBy({ user -> user.first }, { user -> user.second })
 
-    client.register(Nickname(users), this)
+    val options = System.getenv("NICKNAME_COMMAND_TRIGGER_EXPRESSION").let {
+        if (it.isNullOrEmpty()) NicknameOptions() else NicknameOptions(it)
+    }
+    client.register(Nickname(users, options), this)
 
     client.login()
 }

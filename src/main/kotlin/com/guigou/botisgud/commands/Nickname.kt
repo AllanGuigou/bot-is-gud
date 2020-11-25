@@ -3,6 +3,7 @@ package com.guigou.botisgud.commands
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.edit
+import com.guigou.botisgud.models.AbsoluteReminderTrigger
 import com.guigou.botisgud.services.WordService
 import com.guigou.botisgud.services.WordServiceImpl
 import kotlinx.coroutines.CoroutineScope
@@ -11,18 +12,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant.now
 
+data class NicknameOptions(val commandTriggerExpression: String = "* 22 * * *")
+
 class Nickname(
     private val users: Map<Snowflake, List<Snowflake>>,
-    private val wordService: WordService = WordServiceImpl()
+    private val options: NicknameOptions = NicknameOptions(),
+    private val wordService: WordService = WordServiceImpl(),
 ) : Command {
 
     override suspend fun register(client: Kord, scope: CoroutineScope) {
-        var time = now().plusSeconds(60)!!
-        val period = 5 * 60 * 1000L
+        val trigger = AbsoluteReminderTrigger(options.commandTriggerExpression)
 
         scope.launch(Dispatchers.Default) {
             while (true) {
-                delay(time.toEpochMilli() - now().toEpochMilli())
+                delay(trigger.timestamp().toEpochMilli() - now().toEpochMilli())
 
                 for (entry in users) {
                     for (userSnowflake in entry.value) {
@@ -37,8 +40,6 @@ class Nickname(
                         }
                     }
                 }
-
-                time = now().plusMillis(period)
             }
         }
     }
