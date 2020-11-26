@@ -25,12 +25,19 @@ class RelativeReminderTrigger(
     }
 }
 
-class AbsoluteReminderTrigger(private val expression: String, private val clock: Clock = Clock.systemUTC()) : ReminderTrigger {
+class AbsoluteReminderTrigger(expression: String, private var clock: Clock = Clock.systemUTC()) : ReminderTrigger {
+    private var time: ExecutionTime
+    private val parser = CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX))
+
+    init {
+        time = ExecutionTime.forCron(parser.parse(expression))
+    }
+
     override fun timestamp(): Instant {
         val now = ZonedDateTime.now(clock)
-        val parser = CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX))
-        val result = ExecutionTime.forCron(parser.parse(expression)).nextExecution(now)
+        val result = time.nextExecution(now)
 
+        // TODO: how should null be handled?
         return result.unwrap()!!.toInstant()
     }
 }

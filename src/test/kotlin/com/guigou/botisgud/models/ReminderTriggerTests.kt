@@ -3,10 +3,7 @@ package com.guigou.botisgud.models
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
-import org.junit.jupiter.api.DynamicTest
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.*
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -31,7 +28,6 @@ class ReminderTriggerTests {
         @Test
         fun `timestamp gives a time one hour in the future`() {
             val clock = Clock.fixed(Instant.parse("2020-08-08T10:15:30Z"), ZoneId.of("UTC"))
-
             val sut = RelativeReminderTrigger(1, ChronoUnit.HOURS, clock)
 
             val result = sut.timestamp()
@@ -40,24 +36,34 @@ class ReminderTriggerTests {
         }
     }
 
-    // TODO: 2020-08-08T17:15:30Z
     @Nested
     inner class `AbsoluteReminderTrigger` {
-        @ExperimentalStdlibApi
         @TestFactory
         fun `timestamp returns an instant for the next 5 PM UTC`() =
             listOf(
                 "2020-08-08T10:15:30Z" to "2020-08-08T17:00:00Z",
-                "2020-08-08T19:15:30Z" to "2020-08-09T17:00:00Z"
+                "2020-08-08T17:15:30Z" to "2020-08-09T17:00:00Z",
+                "2020-08-08T19:15:30Z" to "2020-08-09T17:00:00Z",
             ).map { (input, expected) ->
                 DynamicTest.dynamicTest("when it is $input") {
                     val clock = Clock.fixed(Instant.parse(input), ZoneId.of("UTC"))
-
-                    val sut = AbsoluteReminderTrigger("* 17 * * *", clock)
+                    val sut = AbsoluteReminderTrigger("0 17 * * *", clock)
 
                     val result = sut.timestamp()
 
                     assertThat(result).isEqualTo(Instant.parse(expected))
+                }
+            }
+
+        @TestFactory
+        fun `constructor throws exception when given invalid input`() =
+            listOf(
+                "",
+                "* * * *",
+                "a 17 * * *",
+            ).map { input ->
+                DynamicTest.dynamicTest("when it is $input") {
+                    assertThrows<IllegalArgumentException> { AbsoluteReminderTrigger(input) }
                 }
             }
     }

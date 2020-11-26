@@ -19,8 +19,8 @@ import java.time.temporal.ChronoUnit
 class Reminder(private val service: ReminderService = ReminderServiceImpl()) : Command {
     private val reactions: Map<String, ReminderTrigger> = mapOf(
         Pair("⌚", RelativeReminderTrigger(1, ChronoUnit.HOURS)),
-        Pair("☀️", AbsoluteReminderTrigger("* 13 * * *")),
-        Pair("🌑", AbsoluteReminderTrigger("* 22 * * *"))
+        Pair("☀️", AbsoluteReminderTrigger("0 13 * * *")),
+        Pair("🌑", AbsoluteReminderTrigger("0 22 * * *"))
     )
 
     override suspend fun register(client: Kord, scope: CoroutineScope) {
