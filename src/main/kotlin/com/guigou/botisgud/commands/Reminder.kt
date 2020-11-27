@@ -6,6 +6,7 @@ import com.gitlab.kordlib.core.event.message.ReactionAddEvent
 import com.gitlab.kordlib.core.on
 import com.gitlab.kordlib.rest.builder.message.EmbedBuilder
 import com.guigou.botisgud.extensions.kord.link
+import com.guigou.botisgud.extensions.logger
 import com.guigou.botisgud.models.AbsoluteReminderTrigger
 import com.guigou.botisgud.models.RelativeReminderTrigger
 import com.guigou.botisgud.models.ReminderDto
@@ -17,21 +18,22 @@ import kotlinx.coroutines.flow.collect
 import java.time.temporal.ChronoUnit
 
 class Reminder(private val service: ReminderService = ReminderServiceImpl()) : Command {
+    companion object {
+        val logger = logger()
+    }
+
     private val reactions: Map<String, ReminderTrigger> = mapOf(
         Pair("⌚", RelativeReminderTrigger(1, ChronoUnit.HOURS)),
-        Pair("☀️", AbsoluteReminderTrigger("0 13 * * *")),
-        Pair("🌑", AbsoluteReminderTrigger("0 22 * * *"))
+        Pair("☀️", AbsoluteReminderTrigger("0 9 * * *")),
+        Pair("🌑", AbsoluteReminderTrigger("0 18 * * *"))
     )
 
     override suspend fun register(client: Kord, scope: CoroutineScope) {
         client.on<ReactionAddEvent> {
-            if (!reactions.containsKey(emoji.name)) {
-                return@on
-            }
+            val trigger = reactions[emoji.name] ?: return@on
 
-            val trigger = reactions[emoji.name]
             val reminderDto = ReminderDto(userId, message.asMessage().content, link)
-            service.add(reminderDto, trigger!!)
+            service.add(reminderDto, trigger)
         }
 
         backgroundWork(client, scope)
