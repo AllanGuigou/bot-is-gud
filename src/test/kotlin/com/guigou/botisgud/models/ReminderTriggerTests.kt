@@ -3,10 +3,7 @@ package com.guigou.botisgud.models
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThan
-import org.junit.jupiter.api.DynamicTest
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.*
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -31,33 +28,60 @@ class ReminderTriggerTests {
         @Test
         fun `timestamp gives a time one hour in the future`() {
             val clock = Clock.fixed(Instant.parse("2020-08-08T10:15:30Z"), ZoneId.of("UTC"))
+            val sut = RelativeReminderTrigger(1, ChronoUnit.HOURS)
 
-            val sut = RelativeReminderTrigger(1, ChronoUnit.HOURS, clock)
-
-            val result = sut.timestamp()
+            val result = sut.timestamp(clock)
 
             assertThat(result).isEqualTo(Instant.parse("2020-08-08T11:15:30Z"))
         }
     }
 
-    // TODO: 2020-08-08T17:15:30Z
     @Nested
     inner class `AbsoluteReminderTrigger` {
-        @ExperimentalStdlibApi
         @TestFactory
-        fun `timestamp returns an instant for the next 5 PM UTC`() =
+        fun `timestamp returns Instant of next UTC 5 PM`() =
             listOf(
                 "2020-08-08T10:15:30Z" to "2020-08-08T17:00:00Z",
-                "2020-08-08T19:15:30Z" to "2020-08-09T17:00:00Z"
+                "2020-08-08T17:15:30Z" to "2020-08-09T17:00:00Z",
+                "2020-08-08T19:15:30Z" to "2020-08-09T17:00:00Z",
             ).map { (input, expected) ->
-                DynamicTest.dynamicTest("when it is $input") {
+                DynamicTest.dynamicTest("when given $input") {
                     val clock = Clock.fixed(Instant.parse(input), ZoneId.of("UTC"))
+                    val sut = AbsoluteReminderTrigger("0 17 * * *")
 
-                    val sut = AbsoluteReminderTrigger("* 17 * * *", clock)
-
-                    val result = sut.timestamp()
+                    val result = sut.timestamp(clock)
 
                     assertThat(result).isEqualTo(Instant.parse(expected))
+                }
+            }
+
+        @TestFactory
+        fun `timestamp returns Instant of next America New York 5 PM `() =
+            listOf(
+                "2020-08-08T10:15:30Z" to "2020-08-08T21:00:00Z", // EDT
+                "2020-08-08T21:15:30Z" to "2020-08-09T21:00:00Z", // EDT
+                "2020-12-08T21:15:30Z" to "2020-12-08T22:00:00Z", // EST
+                "2020-12-08T22:15:30Z" to "2020-12-09T22:00:00Z", // EST
+            ).map { (input, expected) ->
+                DynamicTest.dynamicTest("when given $input") {
+                    val clock = Clock.fixed(Instant.parse(input), ZoneId.of("America/New_York"))
+                    val sut = AbsoluteReminderTrigger("0 17 * * *")
+
+                    val result = sut.timestamp(clock)
+
+                    assertThat(result).isEqualTo(Instant.parse(expected))
+                }
+            }
+
+        @TestFactory
+        fun `constructor throws exception when given invalid input`() =
+            listOf(
+                "",
+                "* * * *",
+                "a 17 * * *",
+            ).map { input ->
+                DynamicTest.dynamicTest("when given $input") {
+                    assertThrows<IllegalArgumentException> { AbsoluteReminderTrigger(input) }
                 }
             }
     }

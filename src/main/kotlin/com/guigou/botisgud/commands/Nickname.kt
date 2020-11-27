@@ -14,7 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant.now
 
-data class NicknameOptions(val commandTriggerExpression: String = "* 22 * * *")
+data class NicknameOptions(val commandTriggerExpression: String = "0 22 * * *")
 
 class Nickname(
     private val users: Map<Snowflake, List<Snowflake>>,
