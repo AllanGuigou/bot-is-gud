@@ -20,6 +20,8 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:1.7.30")
     implementation("com.gitlab.kordlib.kord:kord-core:0.6.10")
     implementation("com.cronutils:cron-utils:9.1.0")
+    implementation("org.mongodb:mongodb-driver-sync:4.1.1")
+    implementation("org.litote.kmongo:kmongo-coroutine:4.2.1")
 
     ktlint("com.pinterest:ktlint:0.39.0")
 

@@ -1,5 +1,6 @@
 package com.guigou.botisgud.commands
 
+import com.gitlab.kordlib.common.entity.Snowflake
 import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.channel.createEmbed
 import com.gitlab.kordlib.core.event.message.ReactionAddEvent
@@ -31,9 +32,8 @@ class Reminder(private val service: ReminderService = ReminderServiceImpl()) : C
     override suspend fun register(client: Kord, scope: CoroutineScope) {
         client.on<ReactionAddEvent> {
             val trigger = reactions[emoji.name] ?: return@on
-
-            val reminderDto = ReminderDto(userId, message.asMessage().content, link)
-            service.add(reminderDto, trigger)
+            val dto = ReminderDto(userId, message.asMessage().content, link, trigger)
+            service.add(dto)
         }
 
         backgroundWork(client, scope)
@@ -42,7 +42,7 @@ class Reminder(private val service: ReminderService = ReminderServiceImpl()) : C
     private fun backgroundWork(client: Kord, scope: CoroutineScope) {
         scope.launch(Dispatchers.Default) {
             service.get().collect { value ->
-                client.getUser(value.userId)!!.getDmChannel().createEmbed {
+                client.getUser(Snowflake(value.userId))!!.getDmChannel().createEmbed {
                     title = "Reminder"
                     description = value.message
                     fields.add(
@@ -52,7 +52,7 @@ class Reminder(private val service: ReminderService = ReminderServiceImpl()) : C
                         }
                     )
                 }
-                service.remove(value)
+                service.remove(value.key)
             }
         }
     }

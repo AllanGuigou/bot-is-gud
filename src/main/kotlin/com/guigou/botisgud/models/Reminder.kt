@@ -1,7 +1,16 @@
 package com.guigou.botisgud.models
 
-import com.gitlab.kordlib.common.entity.Snowflake
-import io.ktor.http.Url
+import org.bson.codecs.pojo.annotations.BsonId
+import org.litote.kmongo.Id
+import org.litote.kmongo.newId
 import java.time.Instant
 
-data class Reminder(val userId: Snowflake, val message: String, val link: Url, val timestamp: Instant)
+// TODO: can Snowflake be serialized? if so then convert userId back to Snowflake.
+data class Reminder(
+    val userId: Long,
+    val message: String,
+    val link: String,
+    val timestamp: Instant
+) {
+    @BsonId val key: Id<Reminder> = newId()
+}
