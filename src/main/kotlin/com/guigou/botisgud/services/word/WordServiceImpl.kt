@@ -1,4 +1,4 @@
-package com.guigou.botisgud.services
+package com.guigou.botisgud.services.word
 
 import java.io.File
 

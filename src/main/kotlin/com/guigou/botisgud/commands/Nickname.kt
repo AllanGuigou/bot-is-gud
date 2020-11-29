@@ -5,8 +5,8 @@ import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.behavior.edit
 import com.guigou.botisgud.extensions.logger
 import com.guigou.botisgud.models.AbsoluteReminderTrigger
-import com.guigou.botisgud.services.WordService
-import com.guigou.botisgud.services.WordServiceImpl
+import com.guigou.botisgud.services.word.WordService
+import com.guigou.botisgud.services.word.WordServiceImpl
 import io.ktor.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

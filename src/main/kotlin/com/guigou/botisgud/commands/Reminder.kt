@@ -12,13 +12,12 @@ import com.guigou.botisgud.models.AbsoluteReminderTrigger
 import com.guigou.botisgud.models.RelativeReminderTrigger
 import com.guigou.botisgud.models.ReminderDto
 import com.guigou.botisgud.models.ReminderTrigger
-import com.guigou.botisgud.services.ReminderService
-import com.guigou.botisgud.services.ReminderServiceImpl
+import com.guigou.botisgud.services.reminder.ReminderService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import java.time.temporal.ChronoUnit
 
-class Reminder(private val service: ReminderService = ReminderServiceImpl()) : Command {
+class Reminder(private val service: ReminderService) : Command {
     companion object {
         val logger = logger()
     }
@@ -41,18 +40,18 @@ class Reminder(private val service: ReminderService = ReminderServiceImpl()) : C
 
     private fun backgroundWork(client: Kord, scope: CoroutineScope) {
         scope.launch(Dispatchers.Default) {
-            service.get().collect { value ->
-                client.getUser(Snowflake(value.userId))!!.getDmChannel().createEmbed {
+            service.get().collect {
+                client.getUser(Snowflake(it.userId))!!.getDmChannel().createEmbed {
                     title = "Reminder"
-                    description = value.message
+                    description = it.message
                     fields.add(
                         EmbedBuilder.Field().apply {
                             this.name = "Original Message"
-                            this.value = value.link.toString()
+                            this.value = it.link
                         }
                     )
                 }
-                service.remove(value.key)
+                service.remove(it.id)
             }
         }
     }

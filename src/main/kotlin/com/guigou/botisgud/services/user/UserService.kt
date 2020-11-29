@@ -1,4 +1,4 @@
-package com.guigou.botisgud.services
+package com.guigou.botisgud.services.user
 
 import com.gitlab.kordlib.common.entity.Snowflake
 import com.guigou.botisgud.models.User
