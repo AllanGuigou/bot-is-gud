@@ -1,12 +1,11 @@
-package com.guigou.botisgud.services
+package com.guigou.botisgud.services.reminder
 
 import com.guigou.botisgud.models.Reminder
 import com.guigou.botisgud.models.ReminderDto
-import com.guigou.botisgud.models.ReminderTrigger
 import kotlinx.coroutines.flow.Flow
 
 interface ReminderService {
-    fun add(reminderDto: ReminderDto, trigger: ReminderTrigger)
-    fun remove(reminder: Reminder)
+    suspend fun add(dto: ReminderDto): Reminder
+    suspend fun remove(id: Int)
     suspend fun get(): Flow<Reminder>
 }
