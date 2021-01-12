@@ -13,14 +13,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.tatarka.inject.annotations.Inject
 import java.time.Instant.now
 
 data class NicknameOptions(val commandTriggerExpression: String = "0 22 * * *")
 
+@Inject
 class Nickname(
-    private val options: NicknameOptions = NicknameOptions(),
-    private val nicknameService: NicknameService = NicknameServiceImpl(),
-    private val wordService: WordService = WordServiceImpl(),
+    private val options: NicknameOptions,
+    private val nicknameService: NicknameService,
+    private val wordService: WordService,
 ) : Command {
     companion object {
         val logger = logger()

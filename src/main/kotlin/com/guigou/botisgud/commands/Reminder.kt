@@ -15,8 +15,10 @@ import com.guigou.botisgud.models.ReminderTrigger
 import com.guigou.botisgud.services.reminder.ReminderService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import me.tatarka.inject.annotations.Inject
 import java.time.temporal.ChronoUnit
 
+@Inject
 class Reminder(private val service: ReminderService) : Command {
     companion object {
         val logger = logger()

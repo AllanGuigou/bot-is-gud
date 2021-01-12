@@ -4,9 +4,11 @@ import com.gitlab.kordlib.core.Kord
 import com.gitlab.kordlib.core.event.channel.TypingStartEvent
 import com.gitlab.kordlib.core.on
 import kotlinx.coroutines.CoroutineScope
+import me.tatarka.inject.annotations.Inject
 import java.time.Instant
 import kotlin.random.Random
 
+@Inject
 class Typing : Command {
     private var triggered: Instant = Instant.MIN;
 

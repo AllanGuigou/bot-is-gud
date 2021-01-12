@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "1.4.0"
+    kotlin("kapt") version "1.4.0"
     id("com.github.johnrengelman.shadow") version "2.0.2"
 }
 
@@ -26,6 +27,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:0.25.1")
     implementation("org.jetbrains.exposed:exposed-java-time:0.25.1")
     implementation("org.postgresql:postgresql:42.2.2")
+
+    kapt("me.tatarka.inject:kotlin-inject-compiler-kapt:0.2.0")
+    implementation("me.tatarka.inject:kotlin-inject-runtime:0.2.0")
 
     ktlint("com.pinterest:ktlint:0.39.0")
 

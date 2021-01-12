@@ -8,19 +8,17 @@ import com.guigou.botisgud.services.user.UserService
 import com.guigou.botisgud.services.user.UserServiceImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
+import me.tatarka.inject.annotations.Inject
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 import java.time.ZoneOffset
 
-class ReminderServiceImpl() : ReminderService {
+@Inject
+class ReminderServiceImpl(
+    private val userService: UserService
+) : ReminderService {
     companion object {
         val logger = logger()
-    }
-
-    private val userService: UserService
-
-    init {
-        userService = UserServiceImpl()
     }
 
     override suspend fun add(dto: ReminderDto): Reminder {
