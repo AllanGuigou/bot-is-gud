@@ -5,6 +5,7 @@ import com.guigou.botisgud.models.RelativeReminderTrigger
 import com.guigou.botisgud.models.ReminderDto
 import com.guigou.botisgud.services.reminder.ReminderServiceImpl
 import com.guigou.botisgud.services.reminder.Reminders
+import com.guigou.botisgud.services.user.UserServiceImpl
 import com.guigou.botisgud.services.user.Users
 import io.ktor.http.*
 import kotlinx.coroutines.flow.collect
@@ -28,7 +29,7 @@ class ReminderServiceImplTests {
         // https://medium.com/@heyitsmohit/unit-testing-delays-errors-retries-with-kotlin-flows-77ce00d0c2f3
         val trigger = RelativeReminderTrigger(1, ChronoUnit.MILLIS)
         val reminder = ReminderDto(Snowflake("1"), "foo", Url("https://example.com"), trigger)
-        val sut = ReminderServiceImpl()
+        val sut = ReminderServiceImpl(UserServiceImpl())
         newSuspendedTransaction {
             create(Users)
             create(Reminders)
