@@ -94,6 +94,7 @@ protobuf {
 tasks {
     compileKotlin {
         kotlinOptions.jvmTarget = "1.8"
+        kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
     }
     compileTestKotlin {
         kotlinOptions.jvmTarget = "1.8"
