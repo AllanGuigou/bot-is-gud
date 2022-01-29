@@ -3,14 +3,8 @@ package com.guigou.botisgud.commands
 import dev.kord.core.Kord
 import dev.kord.core.event.channel.TypingStartEvent
 import dev.kord.core.on
-import com.guigou.botisgud.services.grpc.HelloWorldClient
-import dev.kord.core.event.message.MessageCreateEvent
-import io.grpc.ManagedChannelBuilder
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.asExecutor
 import java.time.Instant
-import java.util.concurrent.Executors
 import kotlin.random.Random
 
 class Typing : Command {
