@@ -14,11 +14,11 @@ fun main() = runBlocking {
 
     val builder = ManagedChannelBuilder.forTarget("localhost:50051").usePlaintext()
     // TODO: research the usage of an executor for the builder
-    val presenceServiceClient = PresenceServiceClient(builder.build())
+    // val presenceServiceClient = PresenceServiceClient(builder.build())
 
     // https://elizarov.medium.com/coroutine-context-and-scope-c8b255d59055
     client.register(Typing(), this) // TODO: determine how to initialize class within extension function
-    client.register(Presence(presenceServiceClient), this)
+    // client.register(Presence(presenceServiceClient), this)
 
     client.login()
 }
