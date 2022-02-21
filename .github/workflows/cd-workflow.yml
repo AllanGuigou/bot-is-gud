@@ -6,6 +6,7 @@ on:
 
 jobs:
   build-and-push-docker-image:
+    environment: production
     defaults:
       run:
         working-directory: bot
@@ -61,3 +62,14 @@ jobs:
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ steps.prepare.outputs.created }}
             org.opencontainers.image.revision=${{ github.sha }}
+      -
+        # TODO: definitely unnecessary to push image to packages & heroku
+        name: Deploy to Heroku
+        uses: gonuit/heroku-docker-deploy@v1.3.3
+        with:
+
+          email: ${{ secrets.HEROKU_EMAIL }}
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          dockerfile_directory: bot/
+          process_type: worker
