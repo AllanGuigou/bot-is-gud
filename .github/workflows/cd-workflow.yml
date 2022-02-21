@@ -6,6 +6,8 @@ on:
 
 jobs:
   build-and-push-docker-image:
+    defaults:
+      working-directory: bot
     name: Build & Push Docker image to GitHub Packages
     runs-on: ubuntu-latest
     steps:
