@@ -1,0 +1,3 @@
+config:
+  gcp:project: botisgud
+  gcp:region: us-east1
