@@ -1,4 +1,5 @@
 import * as gcp from "@pulumi/gcp";
+import * as pulumi from "@pulumi/pulumi";
 
 import * as express from "express";
 import * as bodyParser from "body-parser";
@@ -8,8 +9,20 @@ import axios from "axios";
 
 const { DISCORD_ROLE, DISCORD_WEBHOOK_URL } = process.env;
 
+class HttpCallbackFunctionWithMaxInstances extends gcp.cloudfunctions
+  .HttpCallbackFunction {
+  constructor(
+    name: string,
+    args: gcp.cloudfunctions.HttpCallbackFunctionArgs,
+    missingArgs?: { maxInstances: number },
+    opts?: pulumi.ComponentResourceOptions
+  ) {
+    super(name, { ...args, ...missingArgs }, opts);
+  }
+}
+
 // https://actions-on-google.github.io/assistant-conversation-nodejs/3.7.0/interfaces/conversation_conv.conversationv3options.html
-const _function = new gcp.cloudfunctions.HttpCallbackFunction(
+const _function = new HttpCallbackFunctionWithMaxInstances(
   "at-discord-role-fulfillment",
   {
     runtime: "nodejs16",
@@ -37,7 +50,8 @@ const _function = new gcp.cloudfunctions.HttpCallbackFunction(
 
       return app;
     },
-  }
+  },
+  { maxInstances: 2 }
 );
 
 const invoker = new gcp.cloudfunctions.FunctionIamMember("invoker", {
