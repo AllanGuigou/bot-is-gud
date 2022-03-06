@@ -27,7 +27,8 @@ class Typing : Command {
             return
         }
 
-        if (Random.nextInt(0, 100) < 20) {
+        val chance = Random.nextInt(0, 100)
+        if (chance > 20) {
             return
         }
 
