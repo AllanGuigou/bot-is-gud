@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+
+	"guigou/bot-is-gud/health"
 )
 
 var (
@@ -28,7 +30,12 @@ func LookupEnvOrString(key string, defaultVal string) string {
 	return defaultVal
 }
 
+// not thread safe but no big deal if this triggers twice
+var LastTypedAt time.Time = time.Unix(0, 0)
+
 func main() {
+	health.New(&LastTypedAt)
+
 	dg, err := discordgo.New("Bot " + Token)
 	if err != nil {
 		fmt.Println(err)
@@ -53,9 +60,6 @@ func main() {
 	dg.Close()
 	fmt.Println()
 }
-
-// not thread safe but no big deal if this triggers twice
-var LastTypedAt time.Time = time.Unix(0, 0)
 
 func triggerTyping(s *discordgo.Session, cid string) {
 	if LastTypedAt.Add(time.Minute).After(time.Now().UTC()) {
