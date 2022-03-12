@@ -34,7 +34,7 @@ func LookupEnvOrString(key string, defaultVal string) string {
 var LastTypedAt time.Time = time.Unix(0, 0)
 
 func main() {
-	health.New(&LastTypedAt)
+	go health.New(&LastTypedAt)
 
 	dg, err := discordgo.New("Bot " + Token)
 	if err != nil {
