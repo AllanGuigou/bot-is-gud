@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -14,11 +15,13 @@ import (
 )
 
 var (
-	Token string
+	Token        string
+	ENABLE_BIGLY bool
 )
 
 func init() {
 	flag.StringVar(&Token, "t", LookupEnvOrString("DISCORD_TOKEN", Token), "Bot Token")
+	flag.BoolVar(&ENABLE_BIGLY, "bigly", LookupEnv("ENABLE_BIGLY"), "Feature Flag to Enable Bigly Slash Command")
 	flag.Parse()
 }
 
@@ -28,6 +31,20 @@ func LookupEnvOrString(key string, defaultVal string) string {
 	}
 
 	return defaultVal
+}
+
+func LookupEnv(key string) bool {
+	if val, ok := os.LookupEnv(key); ok {
+		b, err := strconv.ParseBool(val)
+
+		if err != nil {
+			return false
+		}
+
+		return b
+	}
+
+	return false
 }
 
 // not thread safe but no big deal if this triggers twice
@@ -47,8 +64,6 @@ func track(c <-chan Event) {
 
 func main() {
 	go health.New(&LastTypedAt)
-	c := make(chan Event, 100)
-	go track(c)
 
 	dg, err := discordgo.New("Bot " + Token)
 	if err != nil {
@@ -58,15 +73,14 @@ func main() {
 
 	dg.AddHandler(messageCreate)
 	dg.AddHandler(typingStart)
-	dg.AddHandler(slashCommandHandler(c))
+	if ENABLE_BIGLY {
+		c := make(chan Event, 100)
+		go track(c)
+		dg.AddHandler(slashCommandHandler(c))
+	}
+
 	dg.Identify.Intents = discordgo.IntentsGuildMessages
 	dg.Identify.Intents = discordgo.IntentsGuildMessageTyping
-
-	command := &discordgo.ApplicationCommand{
-		Name:        "bigly",
-		Type:        discordgo.ChatApplicationCommand,
-		Description: "Word of the day!",
-	}
 
 	err = dg.Open()
 	if err != nil {
@@ -74,7 +88,14 @@ func main() {
 		return
 	}
 
-	dg.ApplicationCommandCreate(dg.State.User.ID, "", command)
+	if ENABLE_BIGLY {
+		command := &discordgo.ApplicationCommand{
+			Name:        "bigly",
+			Type:        discordgo.ChatApplicationCommand,
+			Description: "Word of the day!",
+		}
+		dg.ApplicationCommandCreate(dg.State.User.ID, "", command)
+	}
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
@@ -107,9 +128,9 @@ func eventFromInteraction(i discordgo.InteractionCreate) Event {
 	var user string
 	if i.Member != nil {
 		user = i.Member.User.ID
+	} else if i.User != nil {
+		user = i.User.ID
 	}
-
-	user = i.User.ID
 
 	// TODO: how to get timestamp from interaction
 	return Event{timestamp: time.Now(), user: user, action: "bigly-slash-command"}
