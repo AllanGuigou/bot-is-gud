@@ -33,8 +33,22 @@ func LookupEnvOrString(key string, defaultVal string) string {
 // not thread safe but no big deal if this triggers twice
 var LastTypedAt time.Time = time.Unix(0, 0)
 
+type Event struct {
+	timestamp time.Time
+	user      string
+	action    string
+}
+
+func track(c <-chan Event) {
+	for event := range c {
+		fmt.Printf("%s %s %s\n", event.timestamp, event.user, event.action)
+	}
+}
+
 func main() {
 	go health.New(&LastTypedAt)
+	c := make(chan Event, 100)
+	go track(c)
 
 	dg, err := discordgo.New("Bot " + Token)
 	if err != nil {
@@ -44,7 +58,7 @@ func main() {
 
 	dg.AddHandler(messageCreate)
 	dg.AddHandler(typingStart)
-	dg.AddHandler(slashCommandHandler)
+	dg.AddHandler(slashCommandHandler(c))
 	dg.Identify.Intents = discordgo.IntentsGuildMessages
 	dg.Identify.Intents = discordgo.IntentsGuildMessageTyping
 
@@ -89,24 +103,41 @@ func rw() string {
 	return wl[i]
 }
 
-func slashCommandHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if i.Type != discordgo.InteractionApplicationCommand {
-		return
+func eventFromInteraction(i discordgo.InteractionCreate) Event {
+	var user string
+	if i.Member != nil {
+		user = i.Member.User.ID
 	}
 
-	switch command := i.ApplicationCommandData().Name; command {
-	case "bigly":
-		{
-			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: rw(),
-					Flags:   uint64(discordgo.MessageFlagsEphemeral),
-				},
-			})
+	user = i.User.ID
 
-			if err != nil {
-				fmt.Println(err)
+	// TODO: how to get timestamp from interaction
+	return Event{timestamp: time.Now(), user: user, action: "bigly-slash-command"}
+}
+
+func slashCommandHandler(c chan<- Event) func(*discordgo.Session, *discordgo.InteractionCreate) {
+	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if i.Type != discordgo.InteractionApplicationCommand {
+			return
+		}
+
+		command := i.ApplicationCommandData()
+		switch cn := command.Name; cn {
+		case "bigly":
+			{
+				content := rw()
+				c <- eventFromInteraction(*i)
+				err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{
+						Content: content,
+						Flags:   uint64(discordgo.MessageFlagsEphemeral),
+					},
+				})
+
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 	}
