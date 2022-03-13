@@ -65,6 +65,7 @@ func track(c <-chan Event) {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	go health.New(&LastTypedAt, PORT)
 
 	dg, err := discordgo.New("Bot " + Token)
@@ -107,7 +108,6 @@ func main() {
 	fmt.Println()
 }
 
-// rand.Seed(time.Now().UnixNano())
 var wl []string = []string{
 	"aback",
 	"abase",
@@ -173,6 +173,10 @@ func triggerTyping(s *discordgo.Session, cid string) {
 	}
 
 	LastTypedAt = time.Now().UTC()
+	if rand.Intn(100) > 20 {
+		fmt.Println("typing skipped")
+		return
+	}
 	err := s.ChannelTyping(cid)
 
 	if err != nil {
