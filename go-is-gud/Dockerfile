@@ -6,7 +6,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
-COPY *.go ./
+COPY . ./
 RUN CGO_ENABLED=0 go build -v -o /bot-is-gud
 
 FROM alpine:latest
