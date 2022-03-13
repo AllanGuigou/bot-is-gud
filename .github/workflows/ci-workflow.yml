@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    environment: production
     defaults:
       run:
         working-directory: go-is-gud
@@ -30,3 +31,11 @@ jobs:
           golint .
       # - name: Run Tests
       #   run: cd test && go test -v
+      - name: Deploy to Heroku
+        uses: gonuit/heroku-docker-deploy@v1.3.3
+        with:
+          email: ${{ secrets.HEROKU_EMAIL }}
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          dockerfile_directory: go-is-gud/
+          process_type: worker
