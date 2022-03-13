@@ -16,11 +16,13 @@ import (
 
 var (
 	Token        string
+	PORT         string = "3000"
 	ENABLE_BIGLY bool
 )
 
 func init() {
 	flag.StringVar(&Token, "t", LookupEnvOrString("DISCORD_TOKEN", Token), "Bot Token")
+	flag.StringVar(&PORT, "port", LookupEnvOrString("PORT", PORT), "Health Check Endpoint")
 	flag.BoolVar(&ENABLE_BIGLY, "bigly", LookupEnv("ENABLE_BIGLY"), "Feature Flag to Enable Bigly Slash Command")
 	flag.Parse()
 }
@@ -63,7 +65,7 @@ func track(c <-chan Event) {
 }
 
 func main() {
-	go health.New(&LastTypedAt)
+	go health.New(&LastTypedAt, PORT)
 
 	dg, err := discordgo.New("Bot " + Token)
 	if err != nil {

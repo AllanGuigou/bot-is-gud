@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func New(lastTypedAt *time.Time) {
+func New(lastTypedAt *time.Time, port string) {
 	app := fiber.New()
 	app.Get("/", func(c *fiber.Ctx) error {
 		c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -15,5 +15,5 @@ func New(lastTypedAt *time.Time) {
 			"status":      "Ok",
 		})
 	})
-	app.Listen(":3000")
+	app.Listen(":" + port)
 }
