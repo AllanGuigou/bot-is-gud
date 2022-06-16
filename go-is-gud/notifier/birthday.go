@@ -27,7 +27,7 @@ func New(dg *discordgo.Session, DATABASE_URL string) *Notifier {
 	n := Notifier{dg: dg, db: conn}
 
 	// TODO: how to avoid multiple notifications or no notifications if the service restarts
-	go Schedule(ctx, time.Hour*24, time.Hour*12, n.sendBirthdayMessage)
+	go Schedule(ctx, time.Hour*24, time.Hour*16, n.sendBirthdayMessage)
 
 	return &n
 }
