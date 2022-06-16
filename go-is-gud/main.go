@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"guigou/bot-is-gud/env"
 	"guigou/bot-is-gud/health"
+	birthday "guigou/bot-is-gud/notifier"
 	"math/rand"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -19,34 +20,14 @@ var (
 	PORT         string = "3000"
 	ENABLE_BIGLY bool
 )
+var DATABASE_URL string
 
 func init() {
-	flag.StringVar(&Token, "t", LookupEnvOrString("DISCORD_TOKEN", Token), "Bot Token")
-	flag.StringVar(&PORT, "port", LookupEnvOrString("PORT", PORT), "Health Check Endpoint")
-	flag.BoolVar(&ENABLE_BIGLY, "bigly", LookupEnv("ENABLE_BIGLY"), "Feature Flag to Enable Bigly Slash Command")
+	flag.StringVar(&Token, "t", env.LookupEnvOrString("DISCORD_TOKEN", Token), "Bot Token")
+	flag.StringVar(&PORT, "port", env.LookupEnvOrString("PORT", PORT), "Health Check Endpoint")
+	flag.BoolVar(&ENABLE_BIGLY, "bigly", env.LookupEnv("ENABLE_BIGLY"), "Feature Flag to Enable Bigly Slash Command")
+	flag.StringVar(&DATABASE_URL, "db", env.LookupEnvOrString("DATABASE_URL", DATABASE_URL), "Database Url")
 	flag.Parse()
-}
-
-func LookupEnvOrString(key string, defaultVal string) string {
-	if val, ok := os.LookupEnv(key); ok {
-		return val
-	}
-
-	return defaultVal
-}
-
-func LookupEnv(key string) bool {
-	if val, ok := os.LookupEnv(key); ok {
-		b, err := strconv.ParseBool(val)
-
-		if err != nil {
-			return false
-		}
-
-		return b
-	}
-
-	return false
 }
 
 // not thread safe but no big deal if this triggers twice
@@ -90,6 +71,8 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+
+	go birthday.New(dg, DATABASE_URL)
 
 	if ENABLE_BIGLY {
 		command := &discordgo.ApplicationCommand{
