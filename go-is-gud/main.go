@@ -6,6 +6,7 @@ import (
 	"guigou/bot-is-gud/env"
 	"guigou/bot-is-gud/health"
 	birthday "guigou/bot-is-gud/notifier"
+	"log"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -81,6 +82,11 @@ func main() {
 			Description: "Word of the day!",
 		}
 		dg.ApplicationCommandCreate(dg.State.User.ID, "", command)
+		dg.ApplicationCommandCreate(dg.State.User.ID, "", &discordgo.ApplicationCommand{
+			Name:        "profile",
+			Type:        discordgo.ChatApplicationCommand,
+			Description: "Configure a profile.",
+		})
 	}
 
 	sc := make(chan os.Signal, 1)
@@ -123,27 +129,88 @@ func eventFromInteraction(i discordgo.InteractionCreate) Event {
 
 func slashCommandHandler(c chan<- Event) func(*discordgo.Session, *discordgo.InteractionCreate) {
 	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		if i.Type != discordgo.InteractionApplicationCommand {
-			return
-		}
-
-		command := i.ApplicationCommandData()
-		switch cn := command.Name; cn {
-		case "bigly":
+		switch i.Type {
+		case discordgo.InteractionApplicationCommand:
 			{
-				content := rw()
-				c <- eventFromInteraction(*i)
+				command := i.ApplicationCommandData()
+				switch cn := command.Name; cn {
+				case "bigly":
+					{
+						content := rw()
+						c <- eventFromInteraction(*i)
+						err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Content: content,
+								Flags:   uint64(discordgo.MessageFlagsEphemeral),
+							},
+						})
+
+						if err != nil {
+							fmt.Println(err)
+						}
+					}
+				case "profile":
+					{
+						c <- eventFromInteraction(*i)
+						err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseModal,
+							Data: &discordgo.InteractionResponseData{
+								CustomID: "profile_" + i.Interaction.Member.User.ID,
+								Title:    "Profile",
+								Components: []discordgo.MessageComponent{
+									discordgo.ActionsRow{
+										Components: []discordgo.MessageComponent{
+											discordgo.TextInput{
+												CustomID: "birthday_month",
+												Label:    "Month",
+												Style:    discordgo.TextInputShort,
+												Required: true,
+												Value:    "07",
+											},
+										},
+									},
+									discordgo.ActionsRow{
+										Components: []discordgo.MessageComponent{
+											discordgo.TextInput{
+												CustomID: "birthday_day",
+												Label:    "Day",
+												Style:    discordgo.TextInputShort,
+												Required: true,
+												Value:    "24",
+											},
+										},
+									},
+								},
+							}},
+						)
+
+						if err != nil {
+							fmt.Println(err)
+						}
+					}
+				}
+			}
+		case discordgo.InteractionModalSubmit:
+			{
 				err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 					Type: discordgo.InteractionResponseChannelMessageWithSource,
 					Data: &discordgo.InteractionResponseData{
-						Content: content,
-						Flags:   uint64(discordgo.MessageFlagsEphemeral),
+						Flags: 1 << 6,
 					},
 				})
 
 				if err != nil {
 					fmt.Println(err)
 				}
+
+				p, err := NewProfile(i.ModalSubmitData())
+				if err != nil {
+					log.Println(err.Error())
+					return
+				}
+
+				log.Println(p.String())
 			}
 		}
 	}
