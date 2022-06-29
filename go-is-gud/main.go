@@ -17,9 +17,10 @@ import (
 )
 
 var (
-	Token        string
-	PORT         string = "3000"
-	ENABLE_BIGLY bool
+	Token         string
+	PORT          string = "3000"
+	ENABLE_BIGLY  bool
+	ENABLE_GAMBLE bool
 )
 var DATABASE_URL string
 
@@ -27,6 +28,7 @@ func init() {
 	flag.StringVar(&Token, "t", env.LookupEnvOrString("DISCORD_TOKEN", Token), "Bot Token")
 	flag.StringVar(&PORT, "port", env.LookupEnvOrString("PORT", PORT), "Health Check Endpoint")
 	flag.BoolVar(&ENABLE_BIGLY, "bigly", env.LookupEnv("ENABLE_BIGLY"), "Feature Flag to Enable Bigly Slash Command")
+	flag.BoolVar(&ENABLE_GAMBLE, "ENABLE_GAMBLE", env.LookupEnv("ENABLE_GAMBLE"), "Feature Flag to Enable Lets Gamble Slash Command")
 	flag.StringVar(&DATABASE_URL, "db", env.LookupEnvOrString("DATABASE_URL", DATABASE_URL), "Database Url")
 	flag.Parse()
 }
@@ -58,11 +60,9 @@ func main() {
 
 	dg.AddHandler(messageCreate)
 	dg.AddHandler(typingStart)
-	if ENABLE_BIGLY {
-		c := make(chan Event, 100)
-		go track(c)
-		dg.AddHandler(slashCommandHandler(c))
-	}
+	c := make(chan Event, 100)
+	go track(c)
+	dg.AddHandler(slashCommandHandler(c))
 
 	dg.Identify.Intents = discordgo.IntentsGuildMessages
 	dg.Identify.Intents = discordgo.IntentsGuildMessageTyping
@@ -86,6 +86,14 @@ func main() {
 			Name:        "profile",
 			Type:        discordgo.ChatApplicationCommand,
 			Description: "Configure a profile.",
+		})
+	}
+
+	if ENABLE_GAMBLE {
+		dg.ApplicationCommandCreate(dg.State.User.ID, "", &discordgo.ApplicationCommand{
+			Name:        "lets-gamble",
+			Type:        discordgo.ChatApplicationCommand,
+			Description: "...",
 		})
 	}
 
@@ -187,6 +195,36 @@ func slashCommandHandler(c chan<- Event) func(*discordgo.Session, *discordgo.Int
 
 						if err != nil {
 							fmt.Println(err)
+						}
+					}
+				case "lets-gamble":
+					{
+						err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Content: "You've lost.",
+								Flags:   uint64(discordgo.MessageFlagsEphemeral),
+							},
+						},
+						)
+
+						if err != nil {
+							fmt.Println(err)
+							return
+						}
+
+						t := time.Now().Add(time.Second * time.Duration(rand.Intn(1000)))
+
+						if i.Member == nil || i.Member.User == nil {
+							fmt.Println("Attempt to `lets-gamble` from outside of a guild.")
+							return
+						}
+
+						err = s.GuildMemberTimeout(i.GuildID, i.Member.User.ID, &t)
+
+						if err != nil {
+							fmt.Println(err)
+							return
 						}
 					}
 				}
