@@ -17,10 +17,11 @@ import (
 )
 
 var (
-	Token         string
-	PORT          string = "3000"
-	ENABLE_BIGLY  bool
-	ENABLE_GAMBLE bool
+	Token           string
+	PORT            string = "3000"
+	ENABLE_BIGLY    bool   = false
+	ENABLE_GAMBLE   bool   = false
+	ENABLE_BIRTHDAY bool   = true
 )
 var DATABASE_URL string
 
@@ -29,6 +30,7 @@ func init() {
 	flag.StringVar(&PORT, "port", env.LookupEnvOrString("PORT", PORT), "Health Check Endpoint")
 	flag.BoolVar(&ENABLE_BIGLY, "bigly", env.LookupEnv("ENABLE_BIGLY"), "Feature Flag to Enable Bigly Slash Command")
 	flag.BoolVar(&ENABLE_GAMBLE, "ENABLE_GAMBLE", env.LookupEnv("ENABLE_GAMBLE"), "Feature Flag to Enable Lets Gamble Slash Command")
+	flag.BoolVar(&ENABLE_BIRTHDAY, "ENABLE_BIRTHDAY", env.LookupEnv("ENABLE_BIRTHDAY"), "Feature Flag to Enable Birthday Notifications")
 	flag.StringVar(&DATABASE_URL, "db", env.LookupEnvOrString("DATABASE_URL", DATABASE_URL), "Database Url")
 	flag.Parse()
 }
@@ -73,7 +75,9 @@ func main() {
 		return
 	}
 
-	go birthday.New(dg, DATABASE_URL)
+	if ENABLE_BIRTHDAY {
+		go birthday.New(dg, DATABASE_URL)
+	}
 
 	if ENABLE_BIGLY {
 		command := &discordgo.ApplicationCommand{
