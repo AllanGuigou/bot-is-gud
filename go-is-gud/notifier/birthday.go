@@ -15,16 +15,10 @@ type Notifier struct {
 	db *pgx.Conn
 }
 
-func New(dg *discordgo.Session, DATABASE_URL string) *Notifier {
+func New(dg *discordgo.Session, db *pgx.Conn) *Notifier {
 	ctx := context.Background()
 
-	conn, err := pgx.Connect(ctx, DATABASE_URL)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	n := Notifier{dg: dg, db: conn}
+	n := Notifier{dg: dg, db: db}
 
 	// TODO: how to avoid multiple notifications or no notifications if the service restarts
 	go Schedule(ctx, time.Hour*24, time.Hour*16, n.sendBirthdayMessage)

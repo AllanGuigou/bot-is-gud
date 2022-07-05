@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"guigou/bot-is-gud/db"
 	"guigou/bot-is-gud/env"
 	"guigou/bot-is-gud/health"
 	birthday "guigou/bot-is-gud/notifier"
@@ -16,23 +16,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var (
-	Token           string
-	PORT            string = "3000"
-	ENABLE_BIGLY    bool   = false
-	ENABLE_GAMBLE   bool   = false
-	ENABLE_BIRTHDAY bool   = true
-)
-var DATABASE_URL string
-
 func init() {
-	flag.StringVar(&Token, "t", env.LookupEnvOrString("DISCORD_TOKEN", Token), "Bot Token")
-	flag.StringVar(&PORT, "port", env.LookupEnvOrString("PORT", PORT), "Health Check Endpoint")
-	flag.BoolVar(&ENABLE_BIGLY, "bigly", env.LookupEnv("ENABLE_BIGLY"), "Feature Flag to Enable Bigly Slash Command")
-	flag.BoolVar(&ENABLE_GAMBLE, "ENABLE_GAMBLE", env.LookupEnv("ENABLE_GAMBLE"), "Feature Flag to Enable Lets Gamble Slash Command")
-	flag.BoolVar(&ENABLE_BIRTHDAY, "ENABLE_BIRTHDAY", env.LookupEnv("ENABLE_BIRTHDAY"), "Feature Flag to Enable Birthday Notifications")
-	flag.StringVar(&DATABASE_URL, "db", env.LookupEnvOrString("DATABASE_URL", DATABASE_URL), "Database Url")
-	flag.Parse()
+	env.Parse()
 }
 
 // not thread safe but no big deal if this triggers twice
@@ -50,11 +35,13 @@ func track(c <-chan Event) {
 	}
 }
 
+var slash *Slash
+
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	go health.New(&LastTypedAt, PORT)
+	go health.New(&LastTypedAt, env.PORT)
 
-	dg, err := discordgo.New("Bot " + Token)
+	dg, err := discordgo.New("Bot " + env.Token)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -66,8 +53,10 @@ func main() {
 	go track(c)
 	dg.AddHandler(slashCommandHandler(c))
 
-	dg.Identify.Intents = discordgo.IntentsGuildMessages
-	dg.Identify.Intents = discordgo.IntentsGuildMessageTyping
+	dg.Identify.Intents = discordgo.IntentsGuildMessages +
+		discordgo.IntentsMessageContent +
+		discordgo.IntentsDirectMessages +
+		discordgo.IntentsGuildMessageTyping
 
 	err = dg.Open()
 	if err != nil {
@@ -75,11 +64,11 @@ func main() {
 		return
 	}
 
-	if ENABLE_BIRTHDAY {
-		go birthday.New(dg, DATABASE_URL)
-	}
+	db := db.New()
+	go birthday.New(dg, db)
+	slash = NewSlash(dg)
 
-	if ENABLE_BIGLY {
+	if env.ENABLE_BIGLY {
 		command := &discordgo.ApplicationCommand{
 			Name:        "bigly",
 			Type:        discordgo.ChatApplicationCommand,
@@ -90,14 +79,6 @@ func main() {
 			Name:        "profile",
 			Type:        discordgo.ChatApplicationCommand,
 			Description: "Configure a profile.",
-		})
-	}
-
-	if ENABLE_GAMBLE {
-		dg.ApplicationCommandCreate(dg.State.User.ID, "", &discordgo.ApplicationCommand{
-			Name:        "lets-gamble",
-			Type:        discordgo.ChatApplicationCommand,
-			Description: "...",
 		})
 	}
 
@@ -291,6 +272,16 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
+	}
+
+	if m.Author.ID == env.SUID {
+		guildId := m.GuildID
+		switch m.Content {
+		case ".disable":
+			slash.remove("lets-gamble", guildId)
+		case ".enable":
+			slash.add("lets-gamble", "...", guildId)
+		}
 	}
 
 	triggerTyping(s, m.ChannelID)
