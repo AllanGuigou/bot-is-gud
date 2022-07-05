@@ -36,6 +36,8 @@ func track(c <-chan Event) {
 }
 
 var slash *Slash
+var sound string
+var buffer [][]byte
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -56,7 +58,9 @@ func main() {
 	dg.Identify.Intents = discordgo.IntentsGuildMessages +
 		discordgo.IntentsMessageContent +
 		discordgo.IntentsDirectMessages +
-		discordgo.IntentsGuildMessageTyping
+		discordgo.IntentsGuildMessageTyping +
+		discordgo.IntentsGuildVoiceStates +
+		discordgo.IntentsGuilds
 
 	err = dg.Open()
 	if err != nil {
@@ -67,6 +71,12 @@ func main() {
 	db := db.New()
 	go birthday.New(dg, db)
 	slash = NewSlash(dg)
+	s, b, err := load(db)
+	if err != nil {
+		panic(err)
+	}
+	sound = s
+	buffer = b
 
 	if env.ENABLE_BIGLY {
 		command := &discordgo.ApplicationCommand{
@@ -212,7 +222,59 @@ func slashCommandHandler(c chan<- Event) func(*discordgo.Session, *discordgo.Int
 							return
 						}
 					}
+				case "sound":
+					{
+						err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Flags: uint64(discordgo.MessageFlagsEphemeral),
+							},
+						},
+						)
+
+						if err != nil {
+							fmt.Println(err)
+							return
+						}
+
+						vs, err := s.State.VoiceState(i.GuildID, i.Member.User.ID)
+						if err != nil {
+							fmt.Println(err)
+							return
+						}
+
+						vc, err := s.ChannelVoiceJoin(vs.GuildID, vs.ChannelID, false, true)
+						if err != nil {
+							fmt.Println(err)
+							return
+						}
+
+						time.Sleep(250 * time.Millisecond)
+
+						vc.Speaking(true)
+
+						for _, b := range buffer {
+							vc.OpusSend <- b
+						}
+
+						vc.Speaking(false)
+
+						time.Sleep(250 * time.Millisecond)
+
+						vc.Disconnect()
+
+						_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+							Content: i.Interaction.ApplicationCommandData().Options[0].StringValue(),
+						},
+						)
+
+						if err != nil {
+							fmt.Println(err)
+							return
+						}
+					}
 				}
+
 			}
 		case discordgo.InteractionModalSubmit:
 			{
@@ -234,6 +296,27 @@ func slashCommandHandler(c chan<- Event) func(*discordgo.Session, *discordgo.Int
 				}
 
 				log.Println(p.String())
+			}
+		case discordgo.InteractionApplicationCommandAutocomplete:
+			{
+				choices := []*discordgo.ApplicationCommandOptionChoice{
+					{
+						Name:  sound,
+						Value: sound,
+					},
+				}
+
+				err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionApplicationCommandAutocompleteResult,
+					Data: &discordgo.InteractionResponseData{
+						Choices: choices,
+					},
+				})
+
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
 			}
 		}
 	}
@@ -279,8 +362,20 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		switch m.Content {
 		case ".disable":
 			slash.remove("lets-gamble", guildId)
+			slash.remove("sound", guildId)
 		case ".enable":
-			slash.add("lets-gamble", "...", guildId)
+			{
+				slash.add("lets-gamble", "...", guildId, make([]*discordgo.ApplicationCommandOption, 0))
+				slash.add("sound", "play a sound", guildId, []*discordgo.ApplicationCommandOption{
+					{
+						Name:         "name",
+						Description:  "name",
+						Type:         discordgo.ApplicationCommandOptionString,
+						Required:     true,
+						Autocomplete: true,
+					},
+				})
+			}
 		}
 	}
 

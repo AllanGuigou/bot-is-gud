@@ -25,16 +25,20 @@ func NewSlash(dg *discordgo.Session) *Slash {
 	return &s
 }
 
-func (s *Slash) add(name, description, guildId string) {
+func (s *Slash) add(name, description, guildId string, options []*discordgo.ApplicationCommandOption) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ac := &discordgo.ApplicationCommand{
 		Name:        name,
 		Type:        discordgo.ChatApplicationCommand,
 		Description: description,
+		Options:     options,
 	}
 
-	s.dg.ApplicationCommandCreate(s.dg.State.User.ID, guildId, ac)
+	_, err := s.dg.ApplicationCommandCreate(s.dg.State.User.ID, guildId, ac)
+	if err != nil {
+		panic(err)
+	}
 	s.commands[name] = ac
 
 	log.Println(fmt.Sprintf("Added %s slash command to guild '%s'", name, guildId))
@@ -51,7 +55,11 @@ func (s *Slash) remove(name, guildId string) {
 		}
 	}
 	// bulk overwrite seems to cause commands to be removed immediately
-	s.dg.ApplicationCommandBulkOverwrite(s.dg.State.User.ID, guildId, commands)
+	_, err := s.dg.ApplicationCommandBulkOverwrite(s.dg.State.User.ID, guildId, commands)
+	if err != nil {
+		panic(err)
+	}
+
 	delete(s.commands, name)
 	log.Println(fmt.Sprintf("Removed %s slash command from guild '%s'", name, guildId))
 }
