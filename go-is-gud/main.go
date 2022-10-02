@@ -20,8 +20,7 @@ func init() {
 	env.Parse()
 }
 
-// not thread safe but no big deal if this triggers twice
-var LastTypedAt time.Time = time.Unix(0, 0)
+var LastTypedAt time.Time = time.Unix(0, 0) // not thread safe but no big deal if this triggers twice
 
 type Event struct {
 	timestamp time.Time
@@ -358,15 +357,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if m.Author.ID == env.SUID {
-		guildId := m.GuildID
+		guildID := m.GuildID
 		switch m.Content {
 		case ".disable":
-			slash.remove("lets-gamble", guildId)
-			slash.remove("sound", guildId)
+			slash.remove("lets-gamble", guildID)
+			slash.remove("sound", guildID)
 		case ".enable":
 			{
-				slash.add("lets-gamble", "...", guildId, make([]*discordgo.ApplicationCommandOption, 0))
-				slash.add("sound", "play a sound", guildId, []*discordgo.ApplicationCommandOption{
+				slash.add("lets-gamble", "...", guildID, make([]*discordgo.ApplicationCommandOption, 0))
+				slash.add("sound", "play a sound", guildID, []*discordgo.ApplicationCommandOption{
 					{
 						Name:         "name",
 						Description:  "name",
