@@ -16,6 +16,7 @@ var (
 	Token        string
 	DATABASE_URL string
 	SUID         string
+	GID          string
 )
 
 func Parse() {
@@ -25,6 +26,7 @@ func Parse() {
 	flag.BoolVar(&ENABLE_GAMBLE, "ENABLE_GAMBLE", lookupEnv("ENABLE_GAMBLE"), "Feature Flag to Enable Lets Gamble Slash Command")
 	flag.StringVar(&DATABASE_URL, "db", lookupEnvOrString("DATABASE_URL", DATABASE_URL), "Database Url")
 	flag.StringVar(&SUID, "su", lookupEnvOrString("SU", SUID), "Superuser Discord Id")
+	flag.StringVar(&GID, "g", lookupEnvOrString("G", GID), "Guild Discord Id")
 	flag.Parse()
 }
 

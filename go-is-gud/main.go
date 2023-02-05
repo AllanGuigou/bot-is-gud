@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"guigou/bot-is-gud/api"
+	"guigou/bot-is-gud/api/rpc"
 	"guigou/bot-is-gud/db"
 	"guigou/bot-is-gud/env"
-	"guigou/bot-is-gud/health"
 	birthday "guigou/bot-is-gud/notifier"
 	"log"
 	"math/rand"
@@ -40,7 +41,7 @@ var buffer [][]byte
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	go health.New(&LastTypedAt, env.PORT)
+	go api.New(&LastTypedAt, env.PORT)
 
 	dg, err := discordgo.New("Bot " + env.Token)
 	if err != nil {
@@ -54,12 +55,14 @@ func main() {
 	go track(c)
 	dg.AddHandler(slashCommandHandler(c))
 
-	dg.Identify.Intents = discordgo.IntentsGuildMessages +
+	dg.Identify.Intents =
 		discordgo.IntentsMessageContent +
-		discordgo.IntentsDirectMessages +
-		discordgo.IntentsGuildMessageTyping +
-		discordgo.IntentsGuildVoiceStates +
-		discordgo.IntentsGuilds
+			discordgo.IntentsDirectMessages +
+			discordgo.IntentsGuilds +
+			discordgo.IntentsGuildMessages +
+			discordgo.IntentsGuildMessageTyping +
+			discordgo.IntentsGuildVoiceStates +
+			discordgo.IntentsGuildMembers
 
 	err = dg.Open()
 	if err != nil {
@@ -68,14 +71,16 @@ func main() {
 	}
 
 	db := db.New()
-	go birthday.New(dg, db)
-	slash = NewSlash(dg)
-	s, b, err := load(db)
-	if err != nil {
-		panic(err)
+	if db != nil {
+		go birthday.New(dg, db)
+		slash = NewSlash(dg)
+		s, b, err := load(db)
+		if err != nil {
+			panic(err)
+		}
+		sound = s
+		buffer = b
 	}
-	sound = s
-	buffer = b
 
 	if env.ENABLE_BIGLY {
 		command := &discordgo.ApplicationCommand{
@@ -90,6 +95,8 @@ func main() {
 			Description: "Configure a profile.",
 		})
 	}
+
+	rpc.SetupPresenceServer(dg, env.GID)
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
@@ -220,6 +227,7 @@ func slashCommandHandler(c chan<- Event) func(*discordgo.Session, *discordgo.Int
 							fmt.Println(err)
 							return
 						}
+
 					}
 				case "sound":
 					{

@@ -1,0 +1,15 @@
+syntax = "proto3";
+package botisgud.api.presence;
+option go_package = "github.com/bot-is-gud/api/rpc";
+
+service Presence {
+  rpc WhoseOn(WhoseOnReq) returns (WhoseOnResp);
+}
+
+message WhoseOnReq {
+  string voiceChannel = 1;
+}
+
+message WhoseOnResp {
+  repeated string users = 1;
+}

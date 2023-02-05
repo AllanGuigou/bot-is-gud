@@ -9,6 +9,10 @@ import (
 )
 
 func New() *pgx.Conn {
+	if env.DATABASE_URL == "" {
+		return nil
+	}
+
 	ctx := context.Background()
 
 	conn, err := pgx.Connect(ctx, env.DATABASE_URL)
