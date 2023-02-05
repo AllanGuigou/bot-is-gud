@@ -64,5 +64,5 @@ jobs:
           with:
             app-name: 'botisgud'
             slot-name: production
-            publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+            publish-profile: ${{ secrets.AzureAppService_PublishProfile_12d7e4cdd1fc4f79807a0e1c52ee97ff }}
             images: 'ghcr.io/allanguigou/bot-is-gud:main'
