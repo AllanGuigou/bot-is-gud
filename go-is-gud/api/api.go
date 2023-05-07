@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 )
 
 type API struct {
@@ -19,6 +20,7 @@ func New(lastTypedAt *time.Time, port string) {
 	app := fiber.New()
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
 	api := &API{lastTypedAt: lastTypedAt, protoClient: client}
+	app.Use(limiter.New())
 	app.Get("/", api.healthHandler)
 	app.Get("/whoseOn", api.whoseOnHandler)
 	app.Listen(":" + port)
