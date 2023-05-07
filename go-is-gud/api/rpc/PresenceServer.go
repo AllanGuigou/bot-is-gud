@@ -14,6 +14,16 @@ type PresenceServer struct {
 }
 
 func SetupPresenceServer(dg *discordgo.Session, gid string) {
+	if gid == "" {
+		fmt.Println("failed to setup presence server: invalid guild id")
+		return
+	}
+	g, err := dg.Guild(gid)
+	if err != nil || g == nil {
+		fmt.Printf("failed to setup presence server guild: %v error: %s\n", g, err)
+		return
+	}
+
 	s := &PresenceServer{dg: dg, gid: gid}
 	handler := NewPresenceServer(s)
 	go http.ListenAndServe(":8080", handler)

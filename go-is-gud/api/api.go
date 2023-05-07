@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"guigou/bot-is-gud/api/rpc"
 	"net/http"
 	"time"
@@ -35,7 +36,10 @@ func (api *API) whoseOnHandler(c *fiber.Ctx) error {
 	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	resp, err := api.protoClient.WhoseOn(context.Background(), &rpc.WhoseOnReq{VoiceChannel: ""})
 	if err != nil {
-		return err
+		fmt.Printf("unable to fetch whose on: %s\n", err)
+		return c.Status(500).JSON(&fiber.Map{
+			"error": "Internal Server Error",
+		})
 	}
 
 	return c.Status(200).JSON(&fiber.Map{
