@@ -83,12 +83,6 @@ func main() {
 	}
 
 	if env.ENABLE_BIGLY {
-		command := &discordgo.ApplicationCommand{
-			Name:        "bigly",
-			Type:        discordgo.ChatApplicationCommand,
-			Description: "Word of the day!",
-		}
-		dg.ApplicationCommandCreate(dg.State.User.ID, "", command)
 		dg.ApplicationCommandCreate(dg.State.User.ID, "", &discordgo.ApplicationCommand{
 			Name:        "profile",
 			Type:        discordgo.ChatApplicationCommand,
@@ -104,24 +98,6 @@ func main() {
 
 	dg.Close()
 	fmt.Println()
-}
-
-var wl []string = []string{
-	"aback",
-	"abase",
-	"abate",
-	"abbey",
-	"abbot",
-	"abhor",
-	"abide",
-	"abled",
-	"abode",
-	"abort",
-}
-
-func rw() string {
-	i := rand.Intn(len(wl))
-	return wl[i]
 }
 
 func eventFromInteraction(i discordgo.InteractionCreate) Event {
@@ -143,22 +119,6 @@ func slashCommandHandler(c chan<- Event) func(*discordgo.Session, *discordgo.Int
 			{
 				command := i.ApplicationCommandData()
 				switch cn := command.Name; cn {
-				case "bigly":
-					{
-						content := rw()
-						c <- eventFromInteraction(*i)
-						err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-							Type: discordgo.InteractionResponseChannelMessageWithSource,
-							Data: &discordgo.InteractionResponseData{
-								Content: content,
-								Flags:   uint64(discordgo.MessageFlagsEphemeral),
-							},
-						})
-
-						if err != nil {
-							fmt.Println(err)
-						}
-					}
 				case "profile":
 					{
 						c <- eventFromInteraction(*i)
