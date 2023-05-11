@@ -1,12 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"guigou/bot-is-gud/api"
 	"guigou/bot-is-gud/api/rpc"
 	"guigou/bot-is-gud/db"
 	"guigou/bot-is-gud/env"
-	birthday "guigou/bot-is-gud/notifier"
 	"log"
 	"math/rand"
 	"os"
@@ -71,16 +71,21 @@ func main() {
 	}
 
 	db := db.New()
+	rpc.SetupPresenceServer(dg, env.GID)
 	if db != nil {
-		go birthday.New(dg, db)
-		slash = NewSlash(dg)
-		s, b, err := load(db)
-		if err != nil {
-			panic(err)
-		}
-		sound = s
-		buffer = b
+		New(context.Background(), db)
 	}
+
+	// if db != nil {
+	// 	go birthday.New(dg, db)
+	// 	slash = NewSlash(dg)
+	// 	s, b, err := load(db)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	sound = s
+	// 	buffer = b
+	// }
 
 	if env.ENABLE_BIGLY {
 		dg.ApplicationCommandCreate(dg.State.User.ID, "", &discordgo.ApplicationCommand{
@@ -89,8 +94,6 @@ func main() {
 			Description: "Configure a profile.",
 		})
 	}
-
-	rpc.SetupPresenceServer(dg, env.GID)
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
