@@ -76,8 +76,9 @@ func (p *Presence) record() {
 				if err != nil {
 					fmt.Println(err)
 				}
-				p.cache.Set(u, id, 0)
 			}
+			// set cache for new users and refresh for existing users
+			p.cache.Set(u, id, 0)
 		}
 
 		if len(updates) > 0 {
