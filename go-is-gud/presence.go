@@ -65,16 +65,16 @@ func (p *Presence) record() {
 
 		for _, u := range res.Users {
 			id, found := p.cache.Get(u)
-
 			if found {
 				fmt.Printf("updating %s active presence\n", u)
 				updates = append(updates, id.(int64))
 			} else {
 				fmt.Printf("creating %s active presence\n", u)
-				var id int64
+				// TODO: deprecate `active`
 				err := p.db.QueryRow(p.ctx, `INSERT INTO presences (uid, active, start, expire) VALUES ($1, TRUE, $2, $3) RETURNING (id)`, u, now, now).Scan(&id)
 				if err != nil {
 					fmt.Println(err)
+					return
 				}
 			}
 			// set cache for new users and refresh for existing users
