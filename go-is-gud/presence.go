@@ -8,77 +8,80 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/patrickmn/go-cache"
 )
 
 type Presence struct {
 	db     *pgx.Conn
 	ctx    context.Context
+	cache  *cache.Cache
 	client rpc.Presence
 }
 
 func New(ctx context.Context, db *pgx.Conn) {
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
-	p := &Presence{db: db, ctx: ctx, client: client}
+	c := cache.New(2*time.Minute, 2*time.Minute)
+	c.OnEvicted(TraceInactive)
+	p := &Presence{db: db, ctx: ctx, cache: c, client: client}
 	go p.record()
 }
 
+func TraceInactive(uid string, id interface{}) {
+	fmt.Printf("removing %s active presence\n", uid)
+}
+
 func (p *Presence) record() {
+	after := time.Now().UTC().Add(-2 * time.Minute)
+	rows, err := p.db.Query(p.ctx, `SELECT id, uid, expire FROM presences WHERE expire > $1`, after)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	for rows.Next() {
+		var id int64
+		var uid string
+		var expire time.Time
+		err = rows.Scan(&id, &uid, &expire)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		p.cache.Set(uid, id, 0)
+	}
+
 	for {
+		now := time.Now().UTC()
 		res, err := p.client.WhoseOn(p.ctx, &rpc.WhoseOnReq{VoiceChannel: ""})
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		rows, err := p.db.Query(context.Background(), `SELECT id, uid, expire FROM presences WHERE active = TRUE`)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		active := make(map[string]int64)
-		for rows.Next() {
-			var id int64
-			var uid string
-			// TODO: how to handle gap in availability where presences may not have been updated for a while
-			var expire time.Time
-			err = rows.Scan(&id, &uid, &expire)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			active[uid] = id
-		}
+		// TODO: update to use copy from to bulk insert
+		// inserts := make([][]interface{}, 0)
+		updates := make([]int64, 0)
 
 		for _, u := range res.Users {
-			id, found := active[u]
-			delete(active, u)
+			id, found := p.cache.Get(u)
+
 			if found {
-				fmt.Printf("found %s active presence\n", u)
-				_, err := p.db.Exec(context.Background(), `UPDATE presences SET expire = $1 WHERE id = $2`, time.Now().UTC(), id)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
+				fmt.Printf("updating %s active presence\n", u)
+				updates = append(updates, id.(int64))
 			} else {
-				fmt.Printf("created %s active presence\n", u)
-				_, err := p.db.Exec(context.Background(), `INSERT INTO presences (uid, active, start, expire) VALUES ($1, TRUE, $2, $3)`, u, time.Now().UTC(), time.Now().UTC())
+				fmt.Printf("creating %s active presence\n", u)
+				var id int64
+				err := p.db.QueryRow(p.ctx, `INSERT INTO presences (uid, active, start, expire) VALUES ($1, TRUE, $2, $3) RETURNING (id)`, u, now, now).Scan(&id)
 				if err != nil {
 					fmt.Println(err)
-					return
 				}
+				p.cache.Set(u, id, 0)
 			}
 		}
 
-		ids := make([]int64, 0)
-		for uid, id := range active {
-			fmt.Printf("found %s inactive presence\n", uid)
-			ids = append(ids, id)
-		}
-
-		if len(ids) > 0 {
-			_, err := p.db.Exec(context.Background(), `UPDATE presences SET active = FALSE WHERE id = ANY ($1)`, ids)
+		if len(updates) > 0 {
+			_, err := p.db.Exec(context.Background(), `UPDATE presences SET expire = $1 WHERE id = ANY ($2)`, now, updates)
 			if err != nil {
 				fmt.Println(err)
 				return
