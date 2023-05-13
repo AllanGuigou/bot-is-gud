@@ -31,7 +31,7 @@ func TraceInactive(uid string, id interface{}) {
 }
 
 func (p *Presence) record() {
-	after := time.Now().UTC().Add(-2 * time.Minute)
+	after := time.Now().UTC().Add(-3 * time.Minute)
 	rows, err := p.db.Query(p.ctx, `SELECT id, uid, expire FROM presences WHERE expire > $1`, after)
 	if err != nil {
 		fmt.Println(err)
