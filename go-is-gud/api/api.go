@@ -12,6 +12,7 @@ import (
 )
 
 type API struct {
+	startedAt   time.Time
 	lastTypedAt *time.Time
 	protoClient rpc.Presence
 }
@@ -19,7 +20,7 @@ type API struct {
 func New(lastTypedAt *time.Time, port string) {
 	app := fiber.New()
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
-	api := &API{lastTypedAt: lastTypedAt, protoClient: client}
+	api := &API{startedAt: time.Now().UTC(), lastTypedAt: lastTypedAt, protoClient: client}
 	app.Use(limiter.New())
 	app.Get("/", api.healthHandler)
 	app.Get("/whoseOn", api.whoseOnHandler)
@@ -29,6 +30,7 @@ func New(lastTypedAt *time.Time, port string) {
 func (api *API) healthHandler(c *fiber.Ctx) error {
 	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	return c.Status(200).JSON(&fiber.Map{
+		"uptime":      fmt.Sprintf("%s", time.Now().UTC().Sub(api.startedAt).Round(time.Second)),
 		"lastTypedAt": api.lastTypedAt.Format(time.RFC3339),
 		"status":      "Ok",
 	})
