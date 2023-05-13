@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -346,6 +347,22 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					},
 				})
 			}
+		}
+
+		if strings.HasPrefix(m.Content, ".user") {
+			contents := strings.SplitAfter(m.Content, " ")
+			if len(contents) < 2 {
+				return
+			}
+			uid := contents[1]
+			user, err := s.User(uid)
+			if err != nil {
+				fmt.Println(err)
+				s.ChannelMessageSendReply(m.ChannelID, "error finding user", m.Reference())
+				return
+			}
+
+			s.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user: %s", user), m.Reference())
 		}
 	}
 
