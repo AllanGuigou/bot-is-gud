@@ -21,7 +21,9 @@ type API struct {
 type isHealthy func() bool
 
 func New(port string, lastTypedAt *time.Time) *API {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		DisableStartupMessage: true,
+	})
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
 	api := &API{startedAt: time.Now().UTC(), lastTypedAt: lastTypedAt, protoClient: client, isHealthy: func() bool { return true }}
 	app.Use(limiter.New())

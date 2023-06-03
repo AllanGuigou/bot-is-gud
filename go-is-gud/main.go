@@ -42,6 +42,7 @@ var buffer [][]byte
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
+	fmt.Println("go-is-gud is starting up...")
 
 	dg, err := discordgo.New("Bot " + env.Token)
 	if err != nil {
@@ -69,6 +70,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println("discordgo service is ready")
 
 	api := api.New(env.PORT, &LastTypedAt)
 
@@ -97,6 +99,8 @@ func main() {
 			Description: "Configure a profile.",
 		})
 	}
+
+	fmt.Println("go-is-gud is ready")
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)

@@ -24,6 +24,7 @@ func New(ctx context.Context, db *pgx.Conn) *Presence {
 	c.OnEvicted(traceInactive)
 	p := &Presence{db: db, ctx: ctx, cache: c, client: client}
 	go p.record()
+	fmt.Println("presence service ready")
 	return p
 }
 
