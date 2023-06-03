@@ -39,14 +39,12 @@ func (ps *PresenceServer) WhoseOn(ctx context.Context, req *WhoseOnReq) (*WhoseO
 }
 
 func whoseOn(s *discordgo.Session, gid, vc string) ([]string, error) {
-	fmt.Println("finding whose on...")
 	g, err := s.State.Guild(gid)
 	if err != nil {
 		return nil, err
 	}
 
 	users := make([]string, 0, len(g.VoiceStates))
-	fmt.Println(len(g.VoiceStates))
 	for _, u := range g.VoiceStates {
 		if u.ChannelID == g.AfkChannelID {
 			continue
