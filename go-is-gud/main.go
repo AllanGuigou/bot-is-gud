@@ -42,7 +42,6 @@ var buffer [][]byte
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	go api.New(&LastTypedAt, env.PORT)
 
 	dg, err := discordgo.New("Bot " + env.Token)
 	if err != nil {
@@ -71,10 +70,13 @@ func main() {
 		return
 	}
 
+	api := api.New(env.PORT, &LastTypedAt)
+
 	db := db.New()
 	rpc.SetupPresenceServer(dg, env.GID)
 	if db != nil {
-		New(context.Background(), db)
+		p := New(context.Background(), db)
+		api.RegisterHealthCheck(func() bool { return p.IsHealthy() })
 	}
 
 	// if db != nil {

@@ -18,15 +18,20 @@ type Presence struct {
 	client rpc.Presence
 }
 
-func New(ctx context.Context, db *pgx.Conn) {
+func New(ctx context.Context, db *pgx.Conn) *Presence {
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
 	c := cache.New(2*time.Minute, 2*time.Minute)
-	c.OnEvicted(TraceInactive)
+	c.OnEvicted(traceInactive)
 	p := &Presence{db: db, ctx: ctx, cache: c, client: client}
 	go p.record()
+	return p
 }
 
-func TraceInactive(uid string, id interface{}) {
+func (p *Presence) IsHealthy() bool {
+	return !p.db.IsClosed()
+}
+
+func traceInactive(uid string, id interface{}) {
 	fmt.Printf("removing %s active presence\n", uid)
 }
 

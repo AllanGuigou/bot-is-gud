@@ -15,24 +15,38 @@ type API struct {
 	startedAt   time.Time
 	lastTypedAt *time.Time
 	protoClient rpc.Presence
+	isHealthy   isHealthy
 }
 
-func New(lastTypedAt *time.Time, port string) {
+type isHealthy func() bool
+
+func New(port string, lastTypedAt *time.Time) *API {
 	app := fiber.New()
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
-	api := &API{startedAt: time.Now().UTC(), lastTypedAt: lastTypedAt, protoClient: client}
+	api := &API{startedAt: time.Now().UTC(), lastTypedAt: lastTypedAt, protoClient: client, isHealthy: func() bool { return true }}
 	app.Use(limiter.New())
 	app.Get("/", api.healthHandler)
 	app.Get("/whoseOn", api.whoseOnHandler)
-	app.Listen(":" + port)
+	go app.Listen(":" + port)
+	return api
+}
+
+func (api *API) RegisterHealthCheck(fn isHealthy) {
+	api.isHealthy = fn
 }
 
 func (api *API) healthHandler(c *fiber.Ctx) error {
 	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	return c.Status(200).JSON(&fiber.Map{
+	statusCode := 200
+	statusMessage := "HEALTHY"
+	if !api.isHealthy() {
+		statusCode = 503
+		statusMessage = "UNHEALTHY"
+	}
+	return c.Status(statusCode).JSON(&fiber.Map{
 		"uptime":      fmt.Sprintf("%s", time.Now().UTC().Sub(api.startedAt).Round(time.Second)),
 		"lastTypedAt": api.lastTypedAt.Format(time.RFC3339),
-		"status":      "Ok",
+		"status":      statusMessage,
 	})
 }
 
