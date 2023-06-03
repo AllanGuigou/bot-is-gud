@@ -38,6 +38,32 @@ func (p *Presence) IsHealthy() bool {
 	return !p.db.IsClosed() && p.isActive
 }
 
+type User struct {
+	HasPresence bool
+	Duration    time.Duration
+}
+
+func (p *Presence) GetUser(uid string) *User {
+	if p == nil {
+		return nil
+	}
+
+	var start time.Time
+	after := time.Now().UTC().Add(-3 * time.Minute)
+	err := p.db.QueryRow(p.ctx, `SELECT start FROM presences WHERE expire > $1 AND uid = $2`, after, uid).Scan(&start)
+	if err != nil {
+		return &User{
+			HasPresence: false,
+			Duration:    time.Duration(0),
+		}
+	}
+
+	return &User{
+		HasPresence: true,
+		Duration:    time.Now().UTC().Sub(start),
+	}
+}
+
 func traceInactive(uid string, id interface{}) {
 	fmt.Printf("removing %s active presence\n", uid)
 }

@@ -50,7 +50,6 @@ func main() {
 		return
 	}
 
-	dg.AddHandler(messageCreate)
 	dg.AddHandler(typingStart)
 	c := make(chan Event, 100)
 	go track(c)
@@ -79,6 +78,9 @@ func main() {
 	if db != nil {
 		p := New(context.Background(), db)
 		api.RegisterHealthCheck(func() bool { return p.IsHealthy() })
+		dg.AddHandler(messageCreate(p))
+	} else {
+		dg.AddHandler(messageCreate(nil))
 	}
 
 	// if db != nil {
@@ -328,49 +330,56 @@ func typingStart(s *discordgo.Session, m *discordgo.TypingStart) {
 	triggerTyping(s, m.ChannelID)
 }
 
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
+func messageCreate(p *Presence) func(s *discordgo.Session, m *discordgo.MessageCreate) {
+	return func(s *discordgo.Session, m *discordgo.MessageCreate) {
+		// ignore all messages created by the bot itself
+		if m.Author.ID == s.State.User.ID {
+			return
+		}
 
-	if m.Author.ID == env.SUID {
-		guildID := m.GuildID
-		switch m.Content {
-		case ".disable":
-			slash.remove("lets-gamble", guildID)
-			slash.remove("sound", guildID)
-		case ".enable":
-			{
-				slash.add("lets-gamble", "...", guildID, make([]*discordgo.ApplicationCommandOption, 0))
-				slash.add("sound", "play a sound", guildID, []*discordgo.ApplicationCommandOption{
-					{
-						Name:         "name",
-						Description:  "name",
-						Type:         discordgo.ApplicationCommandOptionString,
-						Required:     true,
-						Autocomplete: true,
-					},
-				})
+		if m.Author.ID == env.SUID {
+			guildID := m.GuildID
+			switch m.Content {
+			case ".disable":
+				slash.remove("lets-gamble", guildID)
+				slash.remove("sound", guildID)
+			case ".enable":
+				{
+					slash.add("lets-gamble", "...", guildID, make([]*discordgo.ApplicationCommandOption, 0))
+					slash.add("sound", "play a sound", guildID, []*discordgo.ApplicationCommandOption{
+						{
+							Name:         "name",
+							Description:  "name",
+							Type:         discordgo.ApplicationCommandOptionString,
+							Required:     true,
+							Autocomplete: true,
+						},
+					})
+				}
+			}
+
+			if strings.HasPrefix(m.Content, ".user") {
+				contents := strings.SplitAfter(m.Content, " ")
+				if len(contents) < 2 {
+					return
+				}
+				uid := contents[1]
+				user, err := s.User(uid)
+				if err != nil {
+					fmt.Println(err)
+					s.ChannelMessageSendReply(m.ChannelID, "error finding user", m.Reference())
+					return
+				}
+
+				presence := p.GetUser(uid)
+				if presence != nil && presence.HasPresence {
+					s.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user %s active for %s", user, presence.Duration), m.Reference())
+				} else {
+					s.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user %s", user), m.Reference())
+				}
 			}
 		}
 
-		if strings.HasPrefix(m.Content, ".user") {
-			contents := strings.SplitAfter(m.Content, " ")
-			if len(contents) < 2 {
-				return
-			}
-			uid := contents[1]
-			user, err := s.User(uid)
-			if err != nil {
-				fmt.Println(err)
-				s.ChannelMessageSendReply(m.ChannelID, "error finding user", m.Reference())
-				return
-			}
-
-			s.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user: %s", user), m.Reference())
-		}
+		triggerTyping(s, m.ChannelID)
 	}
-
-	triggerTyping(s, m.ChannelID)
 }
