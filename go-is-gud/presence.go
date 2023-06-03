@@ -12,24 +12,30 @@ import (
 )
 
 type Presence struct {
-	db     *pgx.Conn
-	ctx    context.Context
-	cache  *cache.Cache
-	client rpc.Presence
+	db       *pgx.Conn
+	ctx      context.Context
+	cache    *cache.Cache
+	client   rpc.Presence
+	isActive bool
 }
 
 func New(ctx context.Context, db *pgx.Conn) *Presence {
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
 	c := cache.New(2*time.Minute, 2*time.Minute)
 	c.OnEvicted(traceInactive)
-	p := &Presence{db: db, ctx: ctx, cache: c, client: client}
-	go p.record()
+	p := &Presence{db: db, ctx: ctx, cache: c, client: client, isActive: true}
+
+	go func() {
+		p.record()
+		p.isActive = false
+	}()
+
 	fmt.Println("presence service ready")
 	return p
 }
 
 func (p *Presence) IsHealthy() bool {
-	return !p.db.IsClosed()
+	return !p.db.IsClosed() && p.isActive
 }
 
 func traceInactive(uid string, id interface{}) {
