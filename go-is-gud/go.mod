@@ -25,6 +25,7 @@ require (
 )
 
 require (
+	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -33,5 +34,6 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
 	github.com/jackc/pgtype v1.11.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
+	go.uber.org/ratelimit v0.2.0 // indirect
 	golang.org/x/text v0.3.8 // indirect
 )

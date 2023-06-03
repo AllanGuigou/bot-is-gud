@@ -52,6 +52,10 @@ func (p *Presence) GetUser(uid string) *User {
 	after := time.Now().UTC().Add(-3 * time.Minute)
 	err := p.db.QueryRow(p.ctx, `SELECT start FROM presences WHERE expire > $1 AND uid = $2`, after, uid).Scan(&start)
 	if err != nil {
+		if err != pgx.ErrNoRows {
+			fmt.Println(err)
+			return nil
+		}
 		return &User{
 			HasPresence: false,
 			Duration:    time.Duration(0),
@@ -60,7 +64,8 @@ func (p *Presence) GetUser(uid string) *User {
 
 	return &User{
 		HasPresence: true,
-		Duration:    time.Now().UTC().Sub(start),
+		// add 30 seconds so that we can round up to the nearest minute and avoid zero durations for valid users
+		Duration: time.Now().UTC().Add(time.Second * 30).Sub(start).Round(time.Minute),
 	}
 }
 

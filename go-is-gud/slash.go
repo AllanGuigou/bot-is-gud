@@ -41,7 +41,7 @@ func (s *Slash) add(name, description, guildID string, options []*discordgo.Appl
 	}
 	s.commands[name] = ac
 
-	log.Println(fmt.Sprintf("Added %s slash command to guild '%s'", name, guildID))
+	log.Println(fmt.Sprintf("Added '%s' slash command to guild '%s' with description '%s'", name, guildID, description))
 }
 
 func (s *Slash) remove(name, guildID string) {

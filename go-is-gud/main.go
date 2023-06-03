@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"go.uber.org/ratelimit"
 )
 
 func init() {
@@ -53,8 +54,6 @@ func main() {
 	dg.AddHandler(typingStart)
 	c := make(chan Event, 100)
 	go track(c)
-	dg.AddHandler(slashCommandHandler(c))
-
 	dg.Identify.Intents =
 		discordgo.IntentsMessageContent +
 			discordgo.IntentsDirectMessages +
@@ -79,13 +78,15 @@ func main() {
 		p := New(context.Background(), db)
 		api.RegisterHealthCheck(func() bool { return p.IsHealthy() })
 		dg.AddHandler(messageCreate(p))
+		dg.AddHandler(slashCommandHandler(c, p))
 	} else {
 		dg.AddHandler(messageCreate(nil))
+		dg.AddHandler(slashCommandHandler(c, nil))
 	}
 
+	slash = NewSlash(dg)
 	// if db != nil {
 	// 	go birthday.New(dg, db)
-	// 	slash = NewSlash(dg)
 	// 	s, b, err := load(db)
 	// 	if err != nil {
 	// 		panic(err)
@@ -124,13 +125,67 @@ func eventFromInteraction(i discordgo.InteractionCreate) Event {
 	return Event{timestamp: time.Now(), user: user, action: "bigly-slash-command"}
 }
 
-func slashCommandHandler(c chan<- Event) func(*discordgo.Session, *discordgo.InteractionCreate) {
+func slashCommandHandler(c chan<- Event, p *Presence) func(*discordgo.Session, *discordgo.InteractionCreate) {
+	rl := ratelimit.New(5, ratelimit.Per(1*time.Minute))
 	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		switch i.Type {
 		case discordgo.InteractionApplicationCommand:
 			{
 				command := i.ApplicationCommandData()
 				switch cn := command.Name; cn {
+				case "me":
+					{
+						event := eventFromInteraction(*i)
+						c <- event
+						err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{
+								Flags: uint64(discordgo.MessageFlagsEphemeral),
+							},
+						})
+
+						if err != nil {
+							fmt.Println(err)
+							return
+						}
+
+						rl.Take()
+						var content string
+						// TODO: use dg state to provide more accurate results if the user recently connected or disconnected
+						presence := p.GetUser(event.user)
+						if presence == nil {
+							content = "Oops something went wrong..."
+							_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+								Content: content,
+							})
+
+							if err != nil {
+								fmt.Println(err)
+								return
+							}
+						} else if presence.HasPresence {
+							content = fmt.Sprintf("You've been active for %s", strings.ReplaceAll(presence.Duration.String(), "0s", ""))
+							_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+								Content: content,
+							})
+
+							if err != nil {
+								fmt.Println(err)
+								return
+							}
+						} else {
+							content = "You've been inactive"
+							_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+								Content: content,
+							})
+
+							if err != nil {
+								fmt.Println(err)
+								return
+							}
+						}
+						fmt.Printf("'/me' slash command used for user: '%s' content: '%s'\n", event.user, content)
+					}
 				case "profile":
 					{
 						c <- eventFromInteraction(*i)
@@ -253,7 +308,6 @@ func slashCommandHandler(c chan<- Event) func(*discordgo.Session, *discordgo.Int
 						}
 					}
 				}
-
 			}
 		case discordgo.InteractionModalSubmit:
 			{
@@ -339,24 +393,38 @@ func messageCreate(p *Presence) func(s *discordgo.Session, m *discordgo.MessageC
 
 		if m.Author.ID == env.SUID {
 			guildID := m.GuildID
-			switch m.Content {
-			case ".disable":
-				slash.remove("lets-gamble", guildID)
-				slash.remove("sound", guildID)
-			case ".enable":
-				{
-					slash.add("lets-gamble", "...", guildID, make([]*discordgo.ApplicationCommandOption, 0))
-					slash.add("sound", "play a sound", guildID, []*discordgo.ApplicationCommandOption{
-						{
-							Name:         "name",
-							Description:  "name",
-							Type:         discordgo.ApplicationCommandOptionString,
-							Required:     true,
-							Autocomplete: true,
-						},
-					})
+			if strings.HasPrefix(m.Content, ".disable") || strings.HasPrefix(m.Content, ".enable") {
+				contents := strings.SplitAfter(m.Content, " ")
+				if len(contents) < 2 {
+					return
+				}
+				action := strings.TrimSpace(contents[0])
+				command := strings.TrimSpace(contents[1])
+				description := "no description"
+				if len(contents) > 2 {
+					description = strings.Join(contents[2:], " ")
+				}
+				switch action {
+				case ".disable":
+					{
+						slash.remove(command, guildID)
+					}
+				case ".enable":
+					{
+						slash.add(command, description, guildID, make([]*discordgo.ApplicationCommandOption, 0))
+					}
 				}
 			}
+
+			// slash.add("sound", "play a sound", guildID, []*discordgo.ApplicationCommandOption{
+			// 	{
+			// 		Name:         "name",
+			// 		Description:  "name",
+			// 		Type:         discordgo.ApplicationCommandOptionString,
+			// 		Required:     true,
+			// 		Autocomplete: true,
+			// 	},
+			// })
 
 			if strings.HasPrefix(m.Content, ".user") {
 				contents := strings.SplitAfter(m.Content, " ")
