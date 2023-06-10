@@ -5,6 +5,14 @@ on:
     branches: [main]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.53
+          working-directory: go-is-gud
   build:
     defaults:
       run:
@@ -24,11 +32,6 @@ jobs:
       - name: Vet
         run: |
           go vet .
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.53
-          working-directory: go-is-gud
       - name: Login to the Container registry
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
         with:
