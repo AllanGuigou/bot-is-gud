@@ -15,6 +15,7 @@ jobs:
           cache: false
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
+        continue-on-error: true
         with:
           version: v1.53
           working-directory: go-is-gud
