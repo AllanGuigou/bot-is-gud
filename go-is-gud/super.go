@@ -72,5 +72,8 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 		} else {
 			dg.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user %s", user), m.Reference())
 		}
+	} else if strings.HasPrefix(m.Content, ".log") {
+		contents := strings.SplitAfterN(m.Content, " ", 2)
+		fmt.Println(contents[1])
 	}
 }
