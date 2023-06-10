@@ -1,0 +1,3 @@
+#!/bin/bash
+
+go build -o bin/bot-is-gud && op run --env-file="scripts/dev.env" -- ./bin/bot-is-gud
