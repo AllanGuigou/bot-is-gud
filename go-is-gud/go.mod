@@ -15,7 +15,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.34.0
 	github.com/gorilla/websocket v1.5.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
 )
 
 require (
@@ -28,7 +28,7 @@ require (
 
 require (
 	github.com/jackc/puddle/v2 v2.2.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sync v0.2.0 // indirect
 )
 
 require (
