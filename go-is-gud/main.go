@@ -38,8 +38,6 @@ func track(c <-chan Event) {
 }
 
 var slash *Slash
-var sound string
-var buffer [][]byte
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
@@ -85,15 +83,6 @@ func main() {
 	}
 
 	slash = NewSlash(dg)
-	// if db != nil {
-	// 	go birthday.New(dg, db)
-	// 	s, b, err := load(db)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	sound = s
-	// 	buffer = b
-	// }
 
 	if env.ENABLE_BIGLY {
 		dg.ApplicationCommandCreate(dg.State.User.ID, "", &discordgo.ApplicationCommand{
@@ -256,57 +245,6 @@ func slashCommandHandler(c chan<- Event, p *Presence) func(*discordgo.Session, *
 						}
 
 					}
-				case "sound":
-					{
-						err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-							Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-							Data: &discordgo.InteractionResponseData{
-								Flags: uint64(discordgo.MessageFlagsEphemeral),
-							},
-						},
-						)
-
-						if err != nil {
-							fmt.Println(err)
-							return
-						}
-
-						vs, err := s.State.VoiceState(i.GuildID, i.Member.User.ID)
-						if err != nil {
-							fmt.Println(err)
-							return
-						}
-
-						vc, err := s.ChannelVoiceJoin(vs.GuildID, vs.ChannelID, false, true)
-						if err != nil {
-							fmt.Println(err)
-							return
-						}
-
-						time.Sleep(250 * time.Millisecond)
-
-						vc.Speaking(true)
-
-						for _, b := range buffer {
-							vc.OpusSend <- b
-						}
-
-						vc.Speaking(false)
-
-						time.Sleep(250 * time.Millisecond)
-
-						vc.Disconnect()
-
-						_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
-							Content: i.Interaction.ApplicationCommandData().Options[0].StringValue(),
-						},
-						)
-
-						if err != nil {
-							fmt.Println(err)
-							return
-						}
-					}
 				}
 			}
 		case discordgo.InteractionModalSubmit:
@@ -329,27 +267,6 @@ func slashCommandHandler(c chan<- Event, p *Presence) func(*discordgo.Session, *
 				}
 
 				log.Println(p.String())
-			}
-		case discordgo.InteractionApplicationCommandAutocomplete:
-			{
-				choices := []*discordgo.ApplicationCommandOptionChoice{
-					{
-						Name:  sound,
-						Value: sound,
-					},
-				}
-
-				err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionApplicationCommandAutocompleteResult,
-					Data: &discordgo.InteractionResponseData{
-						Choices: choices,
-					},
-				})
-
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
 			}
 		}
 	}
@@ -415,16 +332,6 @@ func messageCreate(p *Presence) func(s *discordgo.Session, m *discordgo.MessageC
 					}
 				}
 			}
-
-			// slash.add("sound", "play a sound", guildID, []*discordgo.ApplicationCommandOption{
-			// 	{
-			// 		Name:         "name",
-			// 		Description:  "name",
-			// 		Type:         discordgo.ApplicationCommandOptionString,
-			// 		Required:     true,
-			// 		Autocomplete: true,
-			// 	},
-			// })
 
 			if strings.HasPrefix(m.Content, ".user") {
 				contents := strings.SplitAfter(m.Content, " ")
