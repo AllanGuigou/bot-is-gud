@@ -125,7 +125,7 @@ func (p *Presence) record() {
 		}
 
 		if len(updates) > 0 {
-			_, err := p.db.Exec(context.Background(), `UPDATE presences SET expire = $1 WHERE id = ANY ($2)`, now, updates)
+			_, err := p.db.Exec(p.ctx, `UPDATE presences SET expire = $1 WHERE id = ANY ($2)`, now, updates)
 			if err != nil {
 				fmt.Println(err)
 				return

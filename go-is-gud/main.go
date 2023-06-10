@@ -68,12 +68,13 @@ func main() {
 	}
 	fmt.Println("discordgo service is ready")
 
-	api := api.New(env.PORT, &LastTypedAt)
+	ctx := context.Background()
+	api := api.New(env.PORT, &LastTypedAt, ctx)
 
-	db := db.New()
+	db := db.New(ctx)
 	rpc.SetupPresenceServer(dg, env.GID)
 	if db != nil {
-		p := New(context.Background(), db)
+		p := New(ctx, db)
 		api.RegisterHealthCheck(func() bool { return p.IsHealthy() })
 		dg.AddHandler(messageCreate(p))
 		dg.AddHandler(slashCommandHandler(c, p))
@@ -95,7 +96,7 @@ func main() {
 	fmt.Println("go-is-gud is ready")
 
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
 	dg.Close()

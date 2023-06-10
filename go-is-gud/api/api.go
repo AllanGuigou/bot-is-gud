@@ -16,16 +16,17 @@ type API struct {
 	lastTypedAt *time.Time
 	protoClient rpc.Presence
 	isHealthy   isHealthy
+	ctx         context.Context
 }
 
 type isHealthy func() bool
 
-func New(port string, lastTypedAt *time.Time) *API {
+func New(port string, lastTypedAt *time.Time, ctx context.Context) *API {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 	})
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
-	api := &API{startedAt: time.Now().UTC(), lastTypedAt: lastTypedAt, protoClient: client, isHealthy: func() bool { return true }}
+	api := &API{startedAt: time.Now().UTC(), lastTypedAt: lastTypedAt, protoClient: client, isHealthy: func() bool { return true }, ctx: ctx}
 	app.Use(limiter.New())
 	app.Get("/", api.healthHandler)
 	app.Get("/whoseOn", api.whoseOnHandler)
@@ -54,7 +55,7 @@ func (api *API) healthHandler(c *fiber.Ctx) error {
 
 func (api *API) whoseOnHandler(c *fiber.Ctx) error {
 	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-	resp, err := api.protoClient.WhoseOn(context.Background(), &rpc.WhoseOnReq{VoiceChannel: ""})
+	resp, err := api.protoClient.WhoseOn(api.ctx, &rpc.WhoseOnReq{VoiceChannel: ""})
 	if err != nil {
 		fmt.Printf("unable to fetch whose on: %s\n", err)
 		return c.Status(500).JSON(&fiber.Map{
