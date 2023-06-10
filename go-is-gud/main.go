@@ -7,7 +7,6 @@ import (
 	"guigou/bot-is-gud/api/rpc"
 	"guigou/bot-is-gud/db"
 	"guigou/bot-is-gud/env"
-	"log"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -263,11 +262,11 @@ func slashCommandHandler(c chan<- Event, p *Presence) func(*discordgo.Session, *
 
 				p, err := NewProfile(i.ModalSubmitData())
 				if err != nil {
-					log.Println(err.Error())
+					fmt.Println(err)
 					return
 				}
 
-				log.Println(p.String())
+				fmt.Println(p)
 			}
 		}
 	}

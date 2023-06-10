@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
@@ -41,7 +40,7 @@ func (s *Slash) add(name, description, guildID string, options []*discordgo.Appl
 	}
 	s.commands[name] = ac
 
-	log.Println(fmt.Sprintf("Added '%s' slash command to guild '%s' with description '%s'", name, guildID, description))
+	fmt.Printf("Added '%s' slash command to guild '%s' with description '%s'\n", name, guildID, description)
 }
 
 func (s *Slash) remove(name, guildID string) {
@@ -61,5 +60,5 @@ func (s *Slash) remove(name, guildID string) {
 	}
 
 	delete(s.commands, name)
-	log.Println(fmt.Sprintf("Removed %s slash command from guild '%s'", name, guildID))
+	fmt.Printf("Removed %s slash command from guild '%s'\n", name, guildID)
 }
