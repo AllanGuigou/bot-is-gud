@@ -19,18 +19,15 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.20.5'
-      - name: Install Dependencies
-        run: |
-          go version
-          go get -u golang.org/x/lint/golint
       - name: Build
         run: go build .
       - name: Vet
         run: |
           go vet .
-      - name: Lint
-        run: |
-          golint .
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.53
       - name: Login to the Container registry
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
         with:
