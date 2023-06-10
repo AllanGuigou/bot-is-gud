@@ -7,19 +7,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/patrickmn/go-cache"
 )
 
 type Presence struct {
-	db       *pgx.Conn
+	db       *pgxpool.Pool
 	ctx      context.Context
 	cache    *cache.Cache
 	client   rpc.Presence
 	isActive bool
 }
 
-func New(ctx context.Context, db *pgx.Conn) *Presence {
+func New(ctx context.Context, db *pgxpool.Pool) *Presence {
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
 	c := cache.New(2*time.Minute, 2*time.Minute)
 	c.OnEvicted(traceInactive)
@@ -35,7 +36,7 @@ func New(ctx context.Context, db *pgx.Conn) *Presence {
 }
 
 func (p *Presence) IsHealthy() bool {
-	return !p.db.IsClosed() && p.isActive
+	return p.isActive
 }
 
 type User struct {
