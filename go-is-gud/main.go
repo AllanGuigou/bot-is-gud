@@ -31,35 +31,20 @@ var slash *Slash
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	fmt.Println("go-is-gud is starting up...")
-
-	dg, err := discordgo.New("Bot " + env.Token)
+	dg, err := setupdg()
 	if err != nil {
-		fmt.Println(err)
-		return
+		panic(err)
 	}
 
-	dg.Identify.Intents =
-		discordgo.IntentsMessageContent +
-			discordgo.IntentsDirectMessages +
-			discordgo.IntentsGuilds +
-			discordgo.IntentsGuildMessages +
-			discordgo.IntentsGuildMessageTyping +
-			discordgo.IntentsGuildVoiceStates +
-			discordgo.IntentsGuildMembers
+	// db
+	ctx := context.Background()
+	db := db.New(ctx)
 
-	err = dg.Open()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("discordgo service is ready")
-
+	// features
 	lastTypedAt := NewTyper(dg)
 
-	ctx := context.Background()
 	api := api.New(env.PORT, lastTypedAt, ctx)
 
-	db := db.New(ctx)
 	rpc.SetupPresenceServer(dg, env.GID)
 	if db != nil {
 		p := New(ctx, db)
@@ -87,4 +72,30 @@ func main() {
 
 	dg.Close()
 	fmt.Println()
+}
+
+func setupdg() (*discordgo.Session, error) {
+	dg, err := discordgo.New("Bot " + env.Token)
+	if err != nil {
+		fmt.Println("failed to setup discordgo")
+		return nil, err
+	}
+
+	dg.Identify.Intents =
+		discordgo.IntentsMessageContent +
+			discordgo.IntentsDirectMessages +
+			discordgo.IntentsGuilds +
+			discordgo.IntentsGuildMessages +
+			discordgo.IntentsGuildMessageTyping +
+			discordgo.IntentsGuildVoiceStates +
+			discordgo.IntentsGuildMembers
+
+	err = dg.Open()
+	if err != nil {
+		fmt.Println("failed to setup discordgo")
+		return nil, err
+	}
+
+	fmt.Println("discordgo service is ready")
+	return dg, nil
 }
