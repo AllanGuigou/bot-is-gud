@@ -5,12 +5,6 @@ import (
 )
 
 func NewLogger() *zap.SugaredLogger {
-	config := zap.NewProductionConfig()
-	config.OutputPaths = []string{"stdout"}
-	logger, err := config.Build()
-	if err != nil {
-		panic(err)
-	}
-
+	logger, _ := zap.NewProduction()
 	return logger.Sugar()
 }
