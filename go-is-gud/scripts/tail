@@ -1,0 +1,6 @@
+#!/bin/bash
+az webapp log tail --resource-group botisgud --provider application 2>&1 | \
+	sed -u 's/^[^{]*//g' | \
+	grep --line-buffered level | \
+	jq --unbuffered '.ts |= (strftime("%Y-%m-%d %H:%M:%S UTC")) | del(.caller)'  -c
+	
