@@ -3,20 +3,22 @@ package main
 import (
 	"fmt"
 	"strings"
+	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 	"go.uber.org/zap"
 )
 
 type Super struct {
-	logger *zap.SugaredLogger
-	dg     *discordgo.Session
-	p      *Presence
-	suid   string
+	logger   *zap.SugaredLogger
+	dg       *discordgo.Session
+	p        *Presence
+	suid     string
+	commands []string
 }
 
 func NewSuper(logger *zap.SugaredLogger, dg *discordgo.Session, p *Presence, suid string) *Super {
-	s := &Super{logger: logger, dg: dg, p: p, suid: suid}
+	s := &Super{logger: logger, dg: dg, p: p, suid: suid, commands: []string{".enable", ".disable", ".user", ".restart"}}
 	if suid == "" {
 		logger.Warn("failed to setup super commands")
 		return nil
@@ -25,54 +27,73 @@ func NewSuper(logger *zap.SugaredLogger, dg *discordgo.Session, p *Presence, sui
 	return s
 }
 
+func Contains(a []string, s string) bool {
+	for _, c := range a {
+		if c == s {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate) {
 	// ignore all messages created by non super users or the bot itself
 	if m.Author.ID == dg.State.User.ID || m.Author.ID != s.suid {
 		return
 	}
 
-	guildID := m.GuildID
-	if strings.HasPrefix(m.Content, ".disable") || strings.HasPrefix(m.Content, ".enable") {
-		contents := strings.SplitAfter(m.Content, " ")
-		if len(contents) < 2 {
-			return
-		}
-		action := strings.TrimSpace(contents[0])
-		command := strings.TrimSpace(contents[1])
-		description := "no description"
-		if len(contents) > 2 {
-			description = strings.Join(contents[2:], " ")
-		}
-		switch action {
-		case ".disable":
-			{
-				slash.remove(command, guildID)
-			}
-		case ".enable":
-			{
-				slash.add(command, description, guildID, make([]*discordgo.ApplicationCommandOption, 0))
-			}
-		}
+	contents := strings.SplitAfter(m.Content, " ")
+	if len(contents) == 0 || !Contains(s.commands, strings.TrimSpace(contents[0])) {
+		return
 	}
 
-	if strings.HasPrefix(m.Content, ".user") {
-		contents := strings.SplitAfter(m.Content, " ")
-		if len(contents) < 2 {
-			return
-		}
-		uid := contents[1]
-		user, err := dg.User(uid)
-		if err != nil {
-			s.logger.Error(err)
-			dg.ChannelMessageSendReply(m.ChannelID, "error finding user", m.Reference())
-			return
-		}
+	command := strings.TrimSpace(contents[0])
+	s.logger.Infow("super command triggered",
+		"name", command)
 
-		presence := s.p.GetUser(uid)
-		if presence != nil && presence.HasPresence {
-			dg.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user %s active for %s", user, presence.Duration), m.Reference())
-		} else {
-			dg.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user %s", user), m.Reference())
+	switch command {
+	case ".disable":
+		{
+			if len(contents) < 1 {
+				return
+			}
+			command := strings.TrimSpace(contents[1])
+			slash.remove(command, m.GuildID)
+		}
+	case ".enable":
+		{
+			if len(contents) < 2 {
+				return
+			}
+			command := strings.TrimSpace(contents[1])
+			description := "no description"
+			if len(contents) > 2 {
+				description = strings.Join(contents[2:], " ")
+			}
+			slash.add(command, description, m.GuildID, make([]*discordgo.ApplicationCommandOption, 0))
+		}
+	case ".user":
+		{
+			if len(contents) < 1 {
+				return
+			}
+			uid := contents[1]
+			user, err := dg.User(uid)
+			if err != nil {
+				s.logger.Error(err)
+				dg.ChannelMessageSendReply(m.ChannelID, "error finding user", m.Reference())
+				return
+			}
+			presence := s.p.GetUser(uid)
+			if presence != nil && presence.HasPresence {
+				dg.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user %s active for %s", user, presence.Duration), m.Reference())
+			} else {
+				dg.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user %s", user), m.Reference())
+			}
+		}
+	case ".restart":
+		{
+			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 		}
 	}
 }
