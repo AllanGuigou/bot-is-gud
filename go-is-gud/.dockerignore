@@ -1,3 +1,6 @@
 bin
 .env
 *.md
+.vscode
+scripts
+infrastructure
