@@ -32,7 +32,7 @@ func (n *Notifier) sendBirthdayMessage(time time.Time) {
 	err := n.db.QueryRow(n.ctx, "SELECT userId, channelId FROM profiles WHERE date_trunc('month', birthday) = date_trunc('month', now()) AND date_trunc('day', birthday) = date_trunc('day', now())").Scan(&userId, &channelId)
 
 	if err != nil && err != pgx.ErrNoRows {
-		fmt.Println(err)
+		// fmt.Println(err)
 		return
 	}
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"guigou/bot-is-gud/api"
 	"guigou/bot-is-gud/api/rpc"
 	"guigou/bot-is-gud/db"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"go.uber.org/zap"
 )
 
 func init() {
@@ -30,30 +30,34 @@ var slash *Slash
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	fmt.Println("go-is-gud is starting up...")
-	dg, err := setupdg()
+	// TODO: consider adding logger to ctx to avoid having to pass it around individually
+	logger := NewLogger()
+	defer logger.Sync()
+	logger.Info("go-is-gud is starting up...")
+
+	dg, err := setupdg(logger)
 	if err != nil {
-		panic(err)
+		logger.Fatal(err)
 	}
 
 	// db
 	ctx := context.Background()
-	db := db.New(ctx)
+	db := db.New(logger, ctx)
 
 	// features
-	lastTypedAt := NewTyper(dg)
+	lastTypedAt := NewTyper(logger, dg)
 
-	api := api.New(env.PORT, lastTypedAt, ctx)
+	api := api.New(logger, env.PORT, lastTypedAt, ctx)
 
-	rpc.SetupPresenceServer(dg, env.GID)
+	rpc.SetupPresenceServer(logger, dg, env.GID)
 	if db != nil {
-		p := New(ctx, db)
+		p := New(logger, ctx, db)
 		api.RegisterHealthCheck(func() bool { return p.IsHealthy() })
-		slash = NewSlash(dg, p)
-		NewSuper(dg, p, env.SUID)
+		slash = NewSlash(logger, dg, p)
+		NewSuper(logger, dg, p, env.SUID)
 	} else {
-		slash = NewSlash(dg, nil)
-		NewSuper(dg, nil, env.SUID)
+		slash = NewSlash(logger, dg, nil)
+		NewSuper(logger, dg, nil, env.SUID)
 	}
 
 	if env.ENABLE_BIGLY {
@@ -64,20 +68,19 @@ func main() {
 		})
 	}
 
-	fmt.Println("go-is-gud is ready")
+	logger.Info("go-is-gud is ready")
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
 	dg.Close()
-	fmt.Println()
 }
 
-func setupdg() (*discordgo.Session, error) {
+func setupdg(logger *zap.SugaredLogger) (*discordgo.Session, error) {
 	dg, err := discordgo.New("Bot " + env.Token)
 	if err != nil {
-		fmt.Println("failed to setup discordgo")
+		logger.Info("failed to setup discordgo")
 		return nil, err
 	}
 
@@ -92,10 +95,10 @@ func setupdg() (*discordgo.Session, error) {
 
 	err = dg.Open()
 	if err != nil {
-		fmt.Println("failed to setup discordgo")
+		logger.Info("failed to setup discordgo")
 		return nil, err
 	}
 
-	fmt.Println("discordgo service is ready")
+	logger.Info("discordgo service is ready")
 	return dg, nil
 }

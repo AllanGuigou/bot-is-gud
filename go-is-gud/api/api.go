@@ -9,9 +9,11 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"go.uber.org/zap"
 )
 
 type API struct {
+	logger      *zap.SugaredLogger
 	startedAt   time.Time
 	lastTypedAt *time.Time
 	protoClient rpc.Presence
@@ -21,12 +23,12 @@ type API struct {
 
 type isHealthy func() bool
 
-func New(port string, lastTypedAt *time.Time, ctx context.Context) *API {
+func New(logger *zap.SugaredLogger, port string, lastTypedAt *time.Time, ctx context.Context) *API {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 	})
 	client := rpc.NewPresenceProtobufClient("http://localhost:8080", &http.Client{})
-	api := &API{startedAt: time.Now().UTC(), lastTypedAt: lastTypedAt, protoClient: client, isHealthy: func() bool { return true }, ctx: ctx}
+	api := &API{logger: logger, startedAt: time.Now().UTC(), lastTypedAt: lastTypedAt, protoClient: client, isHealthy: func() bool { return true }, ctx: ctx}
 	app.Use(limiter.New())
 	app.Get("/", api.healthHandler)
 	app.Get("/whoseOn", api.whoseOnHandler)
@@ -57,7 +59,7 @@ func (api *API) whoseOnHandler(c *fiber.Ctx) error {
 	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	resp, err := api.protoClient.WhoseOn(api.ctx, &rpc.WhoseOnReq{VoiceChannel: ""})
 	if err != nil {
-		fmt.Printf("unable to fetch whose on: %s\n", err)
+		api.logger.Warn("unable to fetch whose on: %s", err)
 		return c.Status(500).JSON(&fiber.Map{
 			"error": "Internal Server Error",
 		})

@@ -5,18 +5,20 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"go.uber.org/zap"
 )
 
 type Super struct {
-	dg   *discordgo.Session
-	p    *Presence
-	suid string
+	logger *zap.SugaredLogger
+	dg     *discordgo.Session
+	p      *Presence
+	suid   string
 }
 
-func NewSuper(dg *discordgo.Session, p *Presence, suid string) *Super {
-	s := &Super{dg: dg, p: p, suid: suid}
+func NewSuper(logger *zap.SugaredLogger, dg *discordgo.Session, p *Presence, suid string) *Super {
+	s := &Super{logger: logger, dg: dg, p: p, suid: suid}
 	if suid == "" {
-		fmt.Println("super user commands not available")
+		logger.Warn("failed to setup super commands")
 		return nil
 	}
 	dg.AddHandler(s.messageCreate)
@@ -61,7 +63,7 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 		uid := contents[1]
 		user, err := dg.User(uid)
 		if err != nil {
-			fmt.Println(err)
+			s.logger.Error(err)
 			dg.ChannelMessageSendReply(m.ChannelID, "error finding user", m.Reference())
 			return
 		}

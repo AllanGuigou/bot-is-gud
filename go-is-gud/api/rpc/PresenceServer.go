@@ -2,29 +2,34 @@ package rpc
 
 import (
 	context "context"
-	fmt "fmt"
 	"net/http"
 
 	"github.com/bwmarrin/discordgo"
+	"go.uber.org/zap"
 )
 
 type PresenceServer struct {
-	dg  *discordgo.Session
-	gid string
+	logger *zap.SugaredLogger
+	dg     *discordgo.Session
+	gid    string
 }
 
-func SetupPresenceServer(dg *discordgo.Session, gid string) {
+func SetupPresenceServer(logger *zap.SugaredLogger, dg *discordgo.Session, gid string) {
 	if gid == "" {
-		fmt.Println("failed to setup presence server: invalid guild id")
+		logger.Warnw("failed to setup presence server",
+			"error", "invalid guild id",
+			"gid", gid)
 		return
 	}
 	g, err := dg.Guild(gid)
 	if err != nil || g == nil {
-		fmt.Printf("failed to setup presence server guild: %v error: %s\n", g, err)
+		logger.Warnw("failed to setup presence server",
+			"error", err,
+			"gid", gid)
 		return
 	}
 
-	s := &PresenceServer{dg: dg, gid: gid}
+	s := &PresenceServer{logger: logger, dg: dg, gid: gid}
 	handler := NewPresenceServer(s)
 	go http.ListenAndServe(":8080", handler)
 }
