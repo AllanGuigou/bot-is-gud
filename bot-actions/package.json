@@ -3,7 +3,7 @@
     "dependencies": {
         "@assistant/conversation": "^3.8.1",
         "@pulumi/gcp": "^6.0.0",
-        "@pulumi/pulumi": "^3.0.0",
+        "@pulumi/pulumi": "^3.74.0",
         "axios": "^0.26.0",
         "body-parser": "^1.19.2",
         "express": "^4.17.3"
