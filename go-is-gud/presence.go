@@ -72,6 +72,44 @@ func (p *Presence) GetUser(uid string) *User {
 	}
 }
 
+func (p *Presence) GetRecentUsers() map[string]*User {
+	users := make(map[string]*User)
+	after := time.Now().UTC().Add(-24 * time.Hour)
+	// presences could have an expire after `after` but would be excluded if their start was before `after`
+	rows, err := p.db.Query(p.ctx, `SELECT uid, start, expire FROM presences WHERE start > $1`, after)
+	if err != nil {
+		p.logger.Error(err)
+		return users
+	}
+
+	for rows.Next() {
+		var uid string
+		var start time.Time
+		var expire time.Time
+		err = rows.Scan(&uid, &start, &expire)
+		if err != nil {
+			p.logger.Error(err)
+		}
+
+		user, ok := users[uid]
+		if !ok {
+			user = &User{
+				HasPresence: false,
+				Duration:    time.Duration(0),
+			}
+			users[uid] = user
+		}
+
+		user.Duration += expire.Sub(start)
+		after := time.Now().UTC().Add(-3 * time.Minute)
+		if expire.After(after) {
+			user.HasPresence = true
+		}
+	}
+
+	return users
+}
+
 func traceInactive(logger *zap.SugaredLogger) func(uid string, id interface{}) {
 	return func(uid string, id interface{}) {
 		logger.Infow("removing active presence", "uid", uid)

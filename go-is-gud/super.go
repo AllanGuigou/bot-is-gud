@@ -18,7 +18,7 @@ type Super struct {
 }
 
 func NewSuper(logger *zap.SugaredLogger, dg *discordgo.Session, p *Presence, suid string) *Super {
-	s := &Super{logger: logger, dg: dg, p: p, suid: suid, commands: []string{".enable", ".disable", ".user", ".restart"}}
+	s := &Super{logger: logger, dg: dg, p: p, suid: suid, commands: []string{".enable", ".disable", ".user", ".users", ".restart"}}
 	if suid == "" {
 		logger.Warn("failed to setup super commands")
 		return nil
@@ -91,9 +91,36 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 				dg.ChannelMessageSendReply(m.ChannelID, fmt.Sprintf("found user %s", user), m.Reference())
 			}
 		}
+	case ".users":
+		{
+			users := s.p.GetRecentUsers()
+			if len(users) < 1 {
+				dg.ChannelMessageSendReply(m.ChannelID, "error finding recent users", m.Reference())
+			} else {
+				message := ""
+				for uid, u := range users {
+					username := getUsername(dg, uid)
+					status := ""
+					if u.HasPresence {
+						status = "(active)"
+					}
+
+					message += fmt.Sprintf("%s %s %s\n", username, u.Duration, status)
+				}
+				dg.ChannelMessageSendReply(m.ChannelID, message, m.Reference())
+			}
+		}
 	case ".restart":
 		{
 			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 		}
 	}
+}
+
+func getUsername(dg *discordgo.Session, uid string) string {
+	user, err := dg.User(uid)
+	if err != nil {
+		return fmt.Sprintf("<unknown-%s>", uid)
+	}
+	return fmt.Sprintf("%s", user)
 }
