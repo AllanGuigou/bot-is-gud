@@ -4,6 +4,7 @@ import (
 	"context"
 	"guigou/bot-is-gud/api/rpc"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -42,6 +43,7 @@ func (p *Presence) IsHealthy() bool {
 }
 
 type User struct {
+	UID         string
 	HasPresence bool
 	Duration    time.Duration
 }
@@ -60,20 +62,22 @@ func (p *Presence) GetUser(uid string) *User {
 			return nil
 		}
 		return &User{
+			UID:         uid,
 			HasPresence: false,
 			Duration:    time.Duration(0),
 		}
 	}
 
 	return &User{
+		UID:         uid,
 		HasPresence: true,
 		// add 30 seconds so that we can round up to the nearest minute and avoid zero durations for valid users
 		Duration: time.Now().UTC().Add(time.Second * 30).Sub(start).Round(time.Minute),
 	}
 }
 
-func (p *Presence) GetRecentUsers() map[string]*User {
-	users := make(map[string]*User)
+func (p *Presence) GetRecentUsers() []*User {
+	users := make([]*User, 0)
 	after := time.Now().UTC().Add(-24 * time.Hour)
 	// presences could have an expire after `after` but would be excluded if their start was before `after`
 	rows, err := p.db.Query(p.ctx, `SELECT uid, start, expire FROM presences WHERE start > $1`, after)
@@ -82,6 +86,7 @@ func (p *Presence) GetRecentUsers() map[string]*User {
 		return users
 	}
 
+	um := make(map[string]*User)
 	for rows.Next() {
 		var uid string
 		var start time.Time
@@ -91,13 +96,14 @@ func (p *Presence) GetRecentUsers() map[string]*User {
 			p.logger.Error(err)
 		}
 
-		user, ok := users[uid]
+		user, ok := um[uid]
 		if !ok {
 			user = &User{
+				UID:         uid,
 				HasPresence: false,
 				Duration:    time.Duration(0),
 			}
-			users[uid] = user
+			um[uid] = user
 		}
 
 		user.Duration += expire.Sub(start)
@@ -106,6 +112,14 @@ func (p *Presence) GetRecentUsers() map[string]*User {
 			user.HasPresence = true
 		}
 	}
+
+	for _, u := range um {
+		users = append(users, u)
+	}
+
+	sort.Slice(users, func(i int, j int) bool {
+		return users[i].Duration > users[j].Duration
+	})
 
 	return users
 }

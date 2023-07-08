@@ -98,8 +98,8 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 				dg.ChannelMessageSendReply(m.ChannelID, "error finding recent users", m.Reference())
 			} else {
 				message := ""
-				for uid, u := range users {
-					username := getUsername(dg, uid)
+				for _, u := range users {
+					username := getUsername(dg, u.UID)
 					status := ""
 					if u.HasPresence {
 						status = "(active)"
