@@ -145,7 +145,7 @@ func meCommand(logger *zap.SugaredLogger, s *discordgo.Session, i *discordgo.Int
 	err := s.InteractionRespond(i, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Flags: uint64(discordgo.MessageFlagsEphemeral),
+			Flags: discordgo.MessageFlagsEphemeral,
 		},
 	})
 
@@ -239,7 +239,7 @@ func gambleCommand(logger *zap.SugaredLogger, s *discordgo.Session, i *discordgo
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: "You've lost.",
-			Flags:   uint64(discordgo.MessageFlagsEphemeral),
+			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	},
 	)
