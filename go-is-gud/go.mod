@@ -24,7 +24,7 @@ require (
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.24.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.32.0
 )
 
 require (
