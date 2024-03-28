@@ -22,12 +22,13 @@ require (
 	github.com/jackc/pgx/v4 v4.18.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/twitchtv/twirp v8.1.3+incompatible
-	go.uber.org/ratelimit v0.2.0
+	go.uber.org/ratelimit v0.3.1
 	go.uber.org/zap v1.26.0
 	google.golang.org/protobuf v1.33.0
 )
 
 require (
+	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -42,7 +43,6 @@ require (
 )
 
 require (
-	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
