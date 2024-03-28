@@ -12,14 +12,14 @@ require (
 )
 
 require (
-	github.com/gofiber/fiber/v2 v2.52.1
+	github.com/gofiber/fiber/v2 v2.52.4
 	github.com/gorilla/websocket v1.5.0 // indirect
 	golang.org/x/crypto v0.20.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
 )
 
 require (
-	github.com/jackc/pgx/v4 v4.18.2
+	github.com/jackc/pgx/v4 v4.18.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	go.uber.org/ratelimit v0.2.0
