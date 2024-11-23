@@ -6,7 +6,6 @@ import (
 	"guigou/bot-is-gud/api/rpc"
 	"guigou/bot-is-gud/db"
 	"guigou/bot-is-gud/env"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -29,7 +28,6 @@ type Event struct {
 var slash *Slash
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
 	// TODO: consider adding logger to ctx to avoid having to pass it around individually
 	logger := NewLogger()
 	defer logger.Sync()
