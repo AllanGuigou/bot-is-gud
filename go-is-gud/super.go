@@ -55,7 +55,7 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 	switch command {
 	case ".disable":
 		{
-			if len(contents) < 1 {
+			if len(contents) < 2 {
 				return
 			}
 			command := strings.TrimSpace(contents[1])
@@ -75,7 +75,7 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 		}
 	case ".user":
 		{
-			if len(contents) < 1 {
+			if len(contents) < 2 {
 				return
 			}
 			uid := contents[1]
