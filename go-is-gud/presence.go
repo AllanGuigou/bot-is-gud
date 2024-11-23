@@ -14,12 +14,13 @@ import (
 )
 
 type Presence struct {
-	logger   *zap.SugaredLogger
-	db       *pgxpool.Pool
-	ctx      context.Context
-	cache    *cache.Cache
-	client   rpc.Presence
-	isActive bool
+	logger    *zap.SugaredLogger
+	db        *pgxpool.Pool
+	ctx       context.Context
+	cache     *cache.Cache
+	client    rpc.Presence
+	isActive  bool
+	startedAt time.Time
 }
 
 func New(logger *zap.SugaredLogger, ctx context.Context, db *pgxpool.Pool) *Presence {
@@ -34,8 +35,17 @@ func New(logger *zap.SugaredLogger, ctx context.Context, db *pgxpool.Pool) *Pres
 		p.isActive = false
 	}()
 
+	p.startedAt = time.Now().UTC()
 	p.logger.Info("presence service ready")
 	return p
+}
+
+func (p *Presence) Stats() time.Duration {
+	if !p.isActive {
+		return 0
+	}
+
+	return time.Now().UTC().Sub(p.startedAt)
 }
 
 func (p *Presence) IsHealthy() bool {

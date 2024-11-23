@@ -107,6 +107,10 @@ func (slash *Slash) commandHandler(s *discordgo.Session, i *discordgo.Interactio
 				{
 					meCommand(slash.logger, s, i.Interaction, event, ratelimitMe, slash.presence)
 				}
+			case "stats":
+				{
+					statsCommand(slash.logger, s, i.Interaction, ratelimitMe, slash.presence)
+				}
 			case "profile":
 				{
 					profileCommand(slash.logger, s, i.Interaction)
@@ -193,6 +197,37 @@ func meCommand(logger *zap.SugaredLogger, s *discordgo.Session, i *discordgo.Int
 	logger.Infow("slash command completed",
 		"name", "me",
 		"uid", event.user,
+		"content", content)
+}
+
+func statsCommand(logger *zap.SugaredLogger, s *discordgo.Session, i *discordgo.Interaction, ratelimit ratelimit.Limiter, presence *Presence) {
+	err := s.InteractionRespond(i, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	ratelimit.Take()
+	var content string
+	uptime := presence.Stats()
+	content = fmt.Sprintf("```\nUptime: %s\n```", uptime)
+	_, err = s.FollowupMessageCreate(i, true, &discordgo.WebhookParams{
+		Content: content,
+	})
+
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	logger.Infow("slash command completed",
+		"name", "status",
 		"content", content)
 }
 
