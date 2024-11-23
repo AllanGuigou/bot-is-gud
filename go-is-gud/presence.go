@@ -48,6 +48,17 @@ type User struct {
 	Duration    time.Duration
 }
 
+func percentageToRank(percentage float64) string {
+	switch {
+	case percentage > .75:
+		return "1"
+	case percentage > .5:
+		return "2"
+	default:
+		return "3"
+	}
+}
+
 func (p *Presence) GetUser(uid string) *User {
 	if p == nil {
 		return nil
@@ -77,10 +88,43 @@ func (p *Presence) GetUser(uid string) *User {
 }
 
 func (p *Presence) GetRecentUsers() []*User {
-	users := make([]*User, 0)
 	after := time.Now().UTC().Add(-24 * time.Hour)
+	return p.getUsers(after)
+}
+
+func (p *Presence) GetLeaderUsers(after time.Time) map[string][]string {
+	if after.After(time.Now().UTC()) {
+		return nil
+	}
+
+	users := p.getUsers(after)
+
+	// get the duration of the top user
+	var topDuration time.Duration
+	if len(users) > 0 {
+		tu := users[1]
+		topDuration = tu.Duration
+	}
+
+	leaders := make(map[string][]string, 0)
+	for _, user := range users {
+		percentage := float64(user.Duration) / float64(topDuration)
+		rank := percentageToRank(percentage)
+		leaders[rank] = append(leaders[rank], user.UID)
+	}
+
+	return leaders
+}
+
+func (p *Presence) getUsers(after time.Time) []*User {
+	users := make([]*User, 0)
 	// presences could have an expire after `after` but would be excluded if their start was before `after`
-	rows, err := p.db.Query(p.ctx, `SELECT uid, start, expire FROM presences WHERE start > $1`, after)
+	rows, err := p.db.Query(p.ctx, `
+		SELECT uid, SUM(EXTRACT(EPOCH FROM (expire - start))) as duration, MAX(expire) as last_expiry 	
+		FROM presences
+		WHERE start > $1
+		GROUP BY uid
+	`, after)
 	if err != nil {
 		p.logger.Error(err)
 		return users
@@ -89,11 +133,12 @@ func (p *Presence) GetRecentUsers() []*User {
 	um := make(map[string]*User)
 	for rows.Next() {
 		var uid string
-		var start time.Time
-		var expire time.Time
-		err = rows.Scan(&uid, &start, &expire)
+		var td float64
+		var le time.Time
+		err = rows.Scan(&uid, &td, &le)
 		if err != nil {
 			p.logger.Error(err)
+			continue
 		}
 
 		user, ok := um[uid]
@@ -106,9 +151,9 @@ func (p *Presence) GetRecentUsers() []*User {
 			um[uid] = user
 		}
 
-		user.Duration += expire.Sub(start)
+		user.Duration = time.Duration(td) * time.Second
 		after := time.Now().UTC().Add(-3 * time.Minute)
-		if expire.After(after) {
+		if le.After(after) {
 			user.HasPresence = true
 		}
 	}
