@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"syscall"
 
@@ -104,7 +105,6 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 					if u.HasPresence {
 						status = "(active)"
 					}
-
 					message += fmt.Sprintf("%s %s %s\n", username, u.Duration, status)
 				}
 				dg.ChannelMessageSendReply(m.ChannelID, message, m.Reference())
@@ -112,7 +112,12 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 		}
 	case ".restart":
 		{
-			syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+			p, err := os.FindProcess(os.Getpid())
+			if err != nil {
+				s.logger.Error(err)
+				return
+			}
+			p.Signal(syscall.SIGINT)
 		}
 	}
 }
