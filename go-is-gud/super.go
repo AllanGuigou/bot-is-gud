@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"go.uber.org/zap"
@@ -94,18 +95,39 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 		}
 	case ".users":
 		{
-			users := s.p.GetRecentUsers()
-			if len(users) < 1 {
-				dg.ChannelMessageSendReply(m.ChannelID, "error finding recent users", m.Reference())
+			var duration time.Duration = 24 * time.Hour
+			if len(contents) > 1 {
+				d, err := time.ParseDuration(contents[1])
+				if err != nil {
+					dg.ChannelMessageSendReply(m.ChannelID, "invalid duration format", m.Reference())
+					return
+				}
+				duration = d.Abs()
+			}
+
+			after := time.Now().UTC().Add(-duration)
+			leaders := s.p.GetLeaderUsers(after)
+			if len(leaders) < 1 {
+				dg.ChannelMessageSendReply(m.ChannelID, "no users found", m.Reference())
 			} else {
 				message := ""
-				for _, u := range users {
-					username := getUsername(dg, u.UID)
-					status := ""
-					if u.HasPresence {
-						status = "(active)"
+				ranks := make([]string, 0, len(leaders))
+				for rank := range leaders {
+					ranks = append(ranks, rank)
+				}
+
+				for _, r := range ranks {
+					message += fmt.Sprintf("%s:", r)
+					for _, u := range leaders[r] {
+						username := getUsername(dg, u)
+						message += fmt.Sprintf(" %s", username)
 					}
-					message += fmt.Sprintf("%s %s %s\n", username, u.Duration, status)
+					message += fmt.Sprintln()
+					// status := ""
+					// if u.HasPresence {
+					// 	status = "(active)"
+					// }
+					// message += fmt.Sprintf("%s %s %s\n", username, u.Duration, status)
 				}
 				dg.ChannelMessageSendReply(m.ChannelID, message, m.Reference())
 			}
