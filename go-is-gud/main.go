@@ -98,5 +98,18 @@ func setupdg(logger *zap.SugaredLogger) (*discordgo.Session, error) {
 	}
 
 	logger.Info("discordgo service is ready")
+
+	// display "Watching You" as the active status
+	usd := discordgo.UpdateStatusData{
+		Activities: []*discordgo.Activity{
+			{
+				Name: "You",
+				Type: discordgo.ActivityTypeWatching,
+			},
+		},
+	}
+
+	dg.UpdateStatusComplex(usd)
+
 	return dg, nil
 }
