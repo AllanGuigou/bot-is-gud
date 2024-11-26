@@ -149,5 +149,5 @@ func getUsername(dg *discordgo.Session, uid string) string {
 	if err != nil {
 		return fmt.Sprintf("<unknown-%s>", uid)
 	}
-	return fmt.Sprintf("%s", user)
+	return user.GlobalName
 }
