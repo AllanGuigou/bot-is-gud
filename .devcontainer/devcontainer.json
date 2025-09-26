@@ -1,6 +1,16 @@
 {
+  "name": "Go Dev Container",
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "features": {
-    "ghcr.io/devcontainers/features/go:1": {}
+    "ghcr.io/devcontainers/features/go:1": {
+    }
+  },
+  "workspaceFolder": "/workspaces/bot-is-gud/go-is-gud",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go"
+      ]
+    }
   }
 }
