@@ -1,6 +1,6 @@
 module guigou/bot-is-gud
 
-go 1.20
+go 1.25
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
