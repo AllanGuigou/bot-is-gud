@@ -19,7 +19,7 @@ require (
 )
 
 require (
-	github.com/jackc/pgx/v4 v4.18.2
+	github.com/jackc/pgx/v4 v4.18.3
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	go.uber.org/ratelimit v0.3.1
