@@ -1,6 +1,8 @@
 module guigou/bot-is-gud
 
-go 1.20
+go 1.21
+
+toolchain go1.21.13
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
@@ -19,6 +21,7 @@ require (
 )
 
 require (
+	github.com/guptarohit/asciigraph v0.7.3
 	github.com/jackc/pgx/v4 v4.18.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/twitchtv/twirp v8.1.3+incompatible
