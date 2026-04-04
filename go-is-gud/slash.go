@@ -273,32 +273,73 @@ func profileCommand(logger *zap.SugaredLogger, s *discordgo.Session, i *discordg
 	}
 }
 
+// gambleLosses tracks consecutive global losses to increase win odds.
+var gambleLosses = struct {
+	sync.Mutex
+	count int
+}{}
+
 func gambleCommand(logger *zap.SugaredLogger, s *discordgo.Session, i *discordgo.Interaction) {
-	err := s.InteractionRespond(i, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "You've lost.",
-			Flags:   discordgo.MessageFlagsEphemeral,
-		},
-	},
-	)
-
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-
-	t := time.Now().Add(time.Second * time.Duration(rand.Intn(1000)))
-
 	if i.Member == nil || i.Member.User == nil {
 		logger.Info("attempt to `lets-gamble` from outside of a guild")
 		return
 	}
 
-	err = s.GuildMemberTimeout(i.GuildID, i.Member.User.ID, &t)
+	if i.Member.CommunicationDisabledUntil != nil && i.Member.CommunicationDisabledUntil.After(time.Now()) {
+		s.InteractionRespond(i, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "You're already timed out. Nice try.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
+	uid := i.Member.User.ID
+
+	// Base win chance 5%, +5% per consecutive global loss, capped at 30%
+	gambleLosses.Lock()
+	losses := gambleLosses.count
+	winChance := 5 + (losses * 5)
+	if winChance > 30 {
+		winChance = 30
+	}
+	won := rand.Intn(100) < winChance
+	if won {
+		gambleLosses.count = 0
+	} else {
+		gambleLosses.count++
+	}
+	gambleLosses.Unlock()
+
+	var content string
+	if won {
+		logger.Infow("gamble won", "uid", uid, "streak", losses)
+		content = "You win! 🎉 ...this time."
+	} else {
+		t := time.Now().Add(time.Second * time.Duration(rand.Intn(1000)))
+		err := s.GuildMemberTimeout(i.GuildID, uid, &t)
+		if err != nil {
+			logger.Infow("gamble won (timeout failed)", "uid", uid, "error", err)
+			gambleLosses.Lock()
+			gambleLosses.count = 0
+			gambleLosses.Unlock()
+			content = "You win! 🎉 ...this time."
+		} else {
+			content = "You've lost."
+		}
+	}
+
+	err := s.InteractionRespond(i, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: content,
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	})
 
 	if err != nil {
 		logger.Error(err)
-		return
 	}
 }
