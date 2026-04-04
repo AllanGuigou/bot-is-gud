@@ -1,10 +1,12 @@
 module guigou/bot-is-gud
 
-go 1.25
+go 1.26.0
+
+toolchain go1.26.1
 
 require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/bwmarrin/discordgo v0.28.1
+	github.com/bwmarrin/discordgo v0.29.0
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
@@ -12,9 +14,9 @@ require (
 )
 
 require (
-	github.com/gofiber/fiber/v2 v2.52.9
+	github.com/gofiber/fiber/v2 v2.52.12
 	github.com/gorilla/websocket v1.5.0 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
+	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 )
 
@@ -23,8 +25,8 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	go.uber.org/ratelimit v0.3.1
-	go.uber.org/zap v1.26.0
-	google.golang.org/protobuf v1.36.5
+	go.uber.org/zap v1.27.1
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -39,7 +41,7 @@ require (
 	github.com/tinylib/msgp v1.2.5 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 )
 
 require (
@@ -50,6 +52,6 @@ require (
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgtype v1.14.0 // indirect
-	github.com/jackc/pgx/v5 v5.7.2
-	golang.org/x/text v0.21.0 // indirect
+	github.com/jackc/pgx/v5 v5.9.1
+	golang.org/x/text v0.29.0 // indirect
 )
