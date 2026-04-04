@@ -112,7 +112,7 @@ func (p *Presence) GetLeaderUsers(after time.Time) map[string][]string {
 	// get the duration of the top user
 	var topDuration time.Duration
 	if len(users) > 0 {
-		tu := users[1]
+		tu := users[0]
 		topDuration = tu.Duration
 	}
 
@@ -128,7 +128,8 @@ func (p *Presence) GetLeaderUsers(after time.Time) map[string][]string {
 
 func (p *Presence) getUsers(after time.Time) []*User {
 	users := make([]*User, 0)
-	// presences could have an expire after `after` but would be excluded if their start was before `after`
+	// TODO: filter on expire > $1 instead of start > $1 to include presences that span the cutoff,
+	// and use GREATEST(start, $1) in the SUM to only count the portion within the window.
 	rows, err := p.db.Query(p.ctx, `
 		SELECT uid, SUM(EXTRACT(EPOCH FROM (expire - start))) as duration, MAX(expire) as last_expiry 	
 		FROM presences
@@ -139,6 +140,7 @@ func (p *Presence) getUsers(after time.Time) []*User {
 		p.logger.Error(err)
 		return users
 	}
+	defer rows.Close()
 
 	um := make(map[string]*User)
 	for rows.Next() {
@@ -161,11 +163,14 @@ func (p *Presence) getUsers(after time.Time) []*User {
 			um[uid] = user
 		}
 
-		user.Duration = time.Duration(td) * time.Second
+		user.Duration = time.Duration(td * float64(time.Second))
 		after := time.Now().UTC().Add(-3 * time.Minute)
 		if le.After(after) {
 			user.HasPresence = true
 		}
+	}
+	if err := rows.Err(); err != nil {
+		p.logger.Error(err)
 	}
 
 	for _, u := range um {
@@ -192,6 +197,7 @@ func (p *Presence) record() {
 		p.logger.Error(err)
 		return
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var id int64
@@ -204,6 +210,10 @@ func (p *Presence) record() {
 		}
 
 		p.cache.Set(uid, id, 0)
+	}
+	if err := rows.Err(); err != nil {
+		p.logger.Error(err)
+		return
 	}
 
 	for {
