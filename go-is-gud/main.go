@@ -41,6 +41,9 @@ func main() {
 	// db
 	ctx := context.Background()
 	db := db.New(logger, ctx)
+	if db != nil {
+		defer db.Close()
+	}
 
 	// features
 	lastTypedAt := NewTyper(logger, dg)

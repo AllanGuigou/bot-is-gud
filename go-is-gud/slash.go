@@ -215,8 +215,12 @@ func statsCommand(logger *zap.SugaredLogger, s *discordgo.Session, i *discordgo.
 
 	ratelimit.Take()
 	var content string
-	uptime := presence.Stats()
-	content = fmt.Sprintf("```\nUptime: %s\n```", uptime)
+	if presence == nil {
+		content = "```\nUptime: unavailable\n```"
+	} else {
+		uptime := presence.Stats()
+		content = fmt.Sprintf("```\nUptime: %s\n```", uptime)
+	}
 	_, err = s.FollowupMessageCreate(i, true, &discordgo.WebhookParams{
 		Content: content,
 	})

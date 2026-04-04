@@ -76,6 +76,10 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 		}
 	case ".user":
 		{
+			if s.p == nil {
+				s.directMessageSuper("presence is unavailable", m)
+				return
+			}
 			if len(contents) < 2 {
 				return
 			}
@@ -95,6 +99,10 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 		}
 	case ".users":
 		{
+			if s.p == nil {
+				s.directMessageSuper("presence is unavailable", m)
+				return
+			}
 			var duration time.Duration = 24 * time.Hour
 			if len(contents) > 1 {
 				d, err := time.ParseDuration(contents[1])
@@ -150,4 +158,19 @@ func getUsername(dg *discordgo.Session, uid string) string {
 		return fmt.Sprintf("<unknown-%s>", uid)
 	}
 	return user.GlobalName
+}
+
+func (s *Super) directMessageSuper(message string, m *discordgo.MessageCreate) {
+	channel, err := s.dg.UserChannelCreate(s.suid)
+	if err != nil {
+		s.logger.Error(err)
+		s.dg.ChannelMessageSendReply(m.ChannelID, "error sending direct message", m.Reference())
+		return
+	}
+
+	_, err = s.dg.ChannelMessageSend(channel.ID, message)
+	if err != nil {
+		s.logger.Error(err)
+		s.dg.ChannelMessageSendReply(m.ChannelID, "error sending direct message", m.Reference())
+	}
 }
