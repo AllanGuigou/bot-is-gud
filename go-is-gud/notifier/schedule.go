@@ -1,13 +1,13 @@
-package birthday
+package notifier
 
 import (
 	"context"
 	"time"
 )
 
-// calls function `f` with a period `p` offset by `o`
-// source: https://stackoverflow.com/a/56156860/11192934
-func Schedule(ctx context.Context, p time.Duration, o time.Duration, f func(time.Time)) {
+// Schedule calls f on a periodic schedule with an optional manual trigger.
+// p is the period, o is the offset from midnight, trigger allows immediate execution.
+func Schedule(ctx context.Context, p time.Duration, o time.Duration, trigger <-chan struct{}, f func(time.Time)) {
 	first := time.Now().Truncate(p).Add(o)
 
 	if first.Before(time.Now()) {
@@ -21,11 +21,12 @@ func Schedule(ctx context.Context, p time.Duration, o time.Duration, f func(time
 	for {
 		select {
 		case v := <-c:
-			// the ticker has to be started before f as it can take some time to finish
 			t = time.NewTicker(p)
 			f(v)
 		case v := <-t.C:
 			f(v)
+		case <-trigger:
+			f(time.Now())
 		case <-ctx.Done():
 			t.Stop()
 			return
