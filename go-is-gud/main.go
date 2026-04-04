@@ -6,6 +6,7 @@ import (
 	"guigou/bot-is-gud/api/rpc"
 	"guigou/bot-is-gud/db"
 	"guigou/bot-is-gud/env"
+	birthday "guigou/bot-is-gud/notifier"
 	"os"
 	"os/signal"
 	"syscall"
@@ -53,12 +54,13 @@ func main() {
 	rpc.SetupPresenceServer(logger, dg, env.GID)
 	if db != nil {
 		p := New(logger, ctx, db)
+		b := birthday.NewBirthday(logger, dg, db, env.SUID, ctx)
 		api.RegisterHealthCheck(func() bool { return p.IsHealthy() })
 		slash = NewSlash(logger, dg, p)
-		NewSuper(logger, dg, p, env.SUID)
+		NewSuper(logger, dg, p, b, env.SUID)
 	} else {
 		slash = NewSlash(logger, dg, nil)
-		NewSuper(logger, dg, nil, env.SUID)
+		NewSuper(logger, dg, nil, nil, env.SUID)
 	}
 
 	if env.ENABLE_BIGLY {

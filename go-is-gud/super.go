@@ -7,6 +7,8 @@ import (
 	"syscall"
 	"time"
 
+	birthday "guigou/bot-is-gud/notifier"
+
 	"github.com/bwmarrin/discordgo"
 	"go.uber.org/zap"
 )
@@ -15,12 +17,13 @@ type Super struct {
 	logger   *zap.SugaredLogger
 	dg       *discordgo.Session
 	p        *Presence
+	b        *birthday.Birthday
 	suid     string
 	commands []string
 }
 
-func NewSuper(logger *zap.SugaredLogger, dg *discordgo.Session, p *Presence, suid string) *Super {
-	s := &Super{logger: logger, dg: dg, p: p, suid: suid, commands: []string{".enable", ".disable", ".user", ".users", ".restart"}}
+func NewSuper(logger *zap.SugaredLogger, dg *discordgo.Session, p *Presence, b *birthday.Birthday, suid string) *Super {
+	s := &Super{logger: logger, dg: dg, p: p, b: b, suid: suid, commands: []string{".enable", ".disable", ".user", ".users", ".birthday", ".restart"}}
 	if suid == "" {
 		logger.Warn("failed to setup super commands")
 		return nil
@@ -139,6 +142,14 @@ func (s *Super) messageCreate(dg *discordgo.Session, m *discordgo.MessageCreate)
 				}
 				dg.ChannelMessageSendReply(m.ChannelID, message, m.Reference())
 			}
+		}
+	case ".birthday":
+		{
+			if s.b == nil {
+				s.directMessageSuper("birthday notifier is unavailable", m)
+				return
+			}
+			s.b.Trigger()
 		}
 	case ".restart":
 		{
